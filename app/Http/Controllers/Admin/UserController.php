@@ -31,7 +31,9 @@ class UserController extends Controller
     {
         $users = User::query()
             ->withSum(
-                ['printJobs as pages_printed_total' => fn ($query) => $query->where('status', PrintJobStatus::Printed)],
+                ['printJobs as pages_printed_total' => fn ($query) => $query
+                    ->where('status', PrintJobStatus::Printed)
+                    ->where('counts_pages', true)],
                 'pages_printed',
             )
             ->orderBy('name')
@@ -199,7 +201,7 @@ class UserController extends Controller
     }
 
     /**
-     * Submit one of the member's jobs again, on their behalf.
+     * Reprint one of the member's documents, as a fix.
      */
     public function relaunch(RelaunchPrintJobRequest $request, User $user, PrintJob $printJob): RedirectResponse
     {
@@ -209,11 +211,15 @@ class UserController extends Controller
             ]);
         }
 
+        // Dépannage : les pages ne sont pas portées au compteur du membre. Le
+        // document n'est pas sorti la première fois, il n'a donc rien à payer
+        // deux fois.
         $this->submissions->resubmit(
             $printJob,
             (int) $request->integer('copies'),
             Duplex::from((string) $request->string('duplex')),
             ColorMode::from((string) $request->string('color_mode')),
+            countsPages: false,
         );
 
         $this->audit("relance de la tâche #{$printJob->id}", $request->user(), $user);

@@ -63,12 +63,14 @@ class User extends Authenticatable
      *
      * Le compteur est cumulé depuis la création du compte : il n'est jamais
      * remis à zéro, et ne compte que les tâches effectivement sorties de
-     * l'imprimante.
+     * l'imprimante — dépannages exclus, puisqu'ils remplacent une impression
+     * qui n'a jamais abouti.
      */
     public function pagesPrinted(): int
     {
         return (int) $this->printJobs()
             ->where('status', PrintJobStatus::Printed)
+            ->where('counts_pages', true)
             ->sum('pages_printed');
     }
 }

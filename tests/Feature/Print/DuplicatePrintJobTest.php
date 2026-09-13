@@ -145,4 +145,23 @@ class DuplicatePrintJobTest extends TestCase
 
         Queue::assertNothingPushed();
     }
+
+    public function test_a_reprint_asked_by_the_member_does_add_to_their_page_count()
+    {
+        Queue::fake();
+
+        $user = User::factory()->create();
+        $original = $this->printedJobFor($user);
+
+        $this->actingAs($user)->post(route('print.jobs.duplicate', $original), [
+            'copies' => 1,
+            'duplex' => 'none',
+            'color_mode' => 'bw',
+        ]);
+
+        // Un second exemplaire voulu par le membre est une impression de plus.
+        $this->assertTrue(
+            PrintJob::where('duplicated_from_id', $original->id)->sole()->counts_pages,
+        );
+    }
 }

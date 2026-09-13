@@ -39,7 +39,7 @@ export default function PrintJobs({ jobs, pagesPrinted }: Props) {
                         job.file_exists ? (
                             <Button variant="outline" size="sm" asChild>
                                 <Link href={duplicateForm(job.id)}>
-                                    Dupliquer
+                                    Réimprimer
                                 </Link>
                             </Button>
                         ) : (

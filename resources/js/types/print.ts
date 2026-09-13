@@ -14,6 +14,7 @@ export type PrintJob = {
     status_label: string;
     error_message: string | null;
     is_duplicate: boolean;
+    counts_pages: boolean;
     file_exists: boolean;
     created_at: string | null;
     printed_at: string | null;

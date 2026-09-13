@@ -152,4 +152,23 @@ class RelaunchPrintJobTest extends TestCase
 
         Queue::assertNothingPushed();
     }
+
+    public function test_a_fix_does_not_add_to_the_page_count_of_the_member()
+    {
+        Queue::fake();
+
+        $admin = User::factory()->admin()->create();
+        $member = User::factory()->create();
+        $original = $this->printedJobFor($member);
+
+        $this->actingAs($admin)->post(route('admin.users.jobs.relaunch', [$member, $original]), [
+            'copies' => 1,
+            'duplex' => 'none',
+            'color_mode' => 'bw',
+        ]);
+
+        $fix = PrintJob::where('duplicated_from_id', $original->id)->sole();
+
+        $this->assertFalse($fix->counts_pages);
+    }
 }

@@ -17,12 +17,12 @@ type Props = {
 export default function AdminRelaunch({ user, job, options }: Props) {
     return (
         <>
-            <Head title="Relancer une impression" />
+            <Head title="Dépanner une impression" />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <Heading
-                    title="Relancer une impression"
-                    description={`« ${job.original_filename} » sera réimprimé pour ${user.name}, et compté sur son total de pages.`}
+                    title="Dépanner une impression"
+                    description={`« ${job.original_filename} » sera réimprimé pour ${user.name}. Ces pages ne seront pas comptées sur son total : le document n’était pas sorti la première fois.`}
                 />
 
                 <Form
@@ -46,7 +46,7 @@ export default function AdminRelaunch({ user, job, options }: Props) {
                             <div className="flex items-center gap-3">
                                 <Button type="submit" disabled={processing}>
                                     {processing && <Spinner />}
-                                    Relancer
+                                    Réimprimer sans compter les pages
                                 </Button>
 
                                 <Button variant="ghost" asChild>
@@ -72,7 +72,7 @@ AdminRelaunch.layout = ({ user }: Props) => ({
             href: show(user.id),
         },
         {
-            title: 'Relancer',
+            title: 'Dépanner',
             href: '',
         },
     ],

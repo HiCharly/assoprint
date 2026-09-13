@@ -84,9 +84,10 @@ que `PrintJobPolicy::view()` a tranché. La réponse porte
 `Cache-Control: private, no-store`, pour que ni Cloudflare ni le navigateur
 n'en gardent une copie.
 
-Consulter n'est pas imprimer : la duplication reste réservée au propriétaire, la
-relance d'un document par un administrateur passant par le back-office, qui la
-journalise.
+Consulter n'est pas imprimer : la réimpression ordinaire reste réservée au
+propriétaire, et compte ses pages. Un administrateur, lui, ne dispose que du
+dépannage — réimprimer un document qui n'est pas sorti —, qui est journalisé et
+dont les pages ne sont pas portées au compteur du membre.
 
 Un test vérifie qu'un script shell simplement renommé en `.pdf` est refusé, et
 un autre qu'un nom contenant de la syntaxe shell n'atteint jamais le disque.

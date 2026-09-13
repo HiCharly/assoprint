@@ -74,7 +74,7 @@ export default function AdminUserShow({ user, pagesPrinted, jobs }: Props) {
                         job.file_exists ? (
                             <Button variant="outline" size="sm" asChild>
                                 <Link href={relaunchForm([user.id, job.id])}>
-                                    Relancer
+                                    Dépanner
                                 </Link>
                             </Button>
                         ) : (

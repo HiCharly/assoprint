@@ -17,7 +17,8 @@ Cloudflare (gratuit) pour l'accès distant, sans ouvrir le moindre port entrant.
 - Suivi des tâches d'impression, rafraîchi tout seul tant qu'une tâche bouge :
   en attente, impression en cours, imprimé, erreur — avec le message de
   l'imprimante quand ça coince
-- Duplication d'une tâche déjà envoyée, en ajustant librement les réglages
+- Réimpression d'un document déjà envoyé, réglages ajustables — les pages sont
+  alors comptées une seconde fois, puisqu'il s'agit bien d'une impression de plus
 - Tableau de bord : compteur de pages, impressions en cours, dernières tâches
 
 ### Administrateur
@@ -29,7 +30,8 @@ Cloudflare (gratuit) pour l'accès distant, sans ouvrir le moindre port entrant.
 - Compteur cumulé de pages imprimées par membre
 - Vue globale de toutes les tâches, tous membres confondus, pour diagnostiquer
   l'imprimante
-- Relance d'une tâche d'un membre, réglages ajustables
+- Dépannage : réimpression du document d'un membre quand il n'est pas sorti
+  (bourrage, bac vide). Ces pages-là ne sont **pas** comptées sur son total
 
 ## Stack technique
 

@@ -74,4 +74,14 @@ class PrintJobFactory extends Factory
             'error_message' => $message,
         ]);
     }
+
+    /**
+     * Indicate that the job is an administrator fix, not a new print.
+     */
+    public function troubleshooting(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'counts_pages' => false,
+        ]);
+    }
 }
