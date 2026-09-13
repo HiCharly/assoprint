@@ -11,8 +11,10 @@ use App\Models\PrintJob;
 use App\Services\PrintJobSubmissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PrintJobController extends Controller
 {
@@ -60,6 +62,33 @@ class PrintJobController extends Controller
             'jobs' => PrintJobResource::collection($jobs),
             'pagesPrinted' => $request->user()->pagesPrinted(),
         ]);
+    }
+
+    /**
+     * Serve the deposited PDF, for the member to check what was printed.
+     *
+     * Le fichier est servi par l'application, jamais par le serveur web : il
+     * dort hors du webroot, et c'est la policy qui décide qui peut le lire.
+     */
+    public function document(Request $request, PrintJob $printJob): StreamedResponse
+    {
+        $this->authorize('view', $printJob);
+
+        abort_unless($printJob->fileExists(), 404);
+
+        return Storage::disk(PrintJob::DISK)->response(
+            $printJob->storage_path,
+            $printJob->original_filename,
+            [
+                'Content-Type' => 'application/pdf',
+                // Affichage dans le navigateur plutôt que téléchargement : le
+                // membre veut vérifier ce qu'il a imprimé, pas le récupérer.
+                'Content-Disposition' => 'inline; filename="'.addslashes($printJob->original_filename).'"',
+                // Le document appartient à un membre : ni Cloudflare ni le
+                // navigateur ne doivent en garder une copie.
+                'Cache-Control' => 'private, no-store, max-age=0',
+            ],
+        );
     }
 
     /**

@@ -1,10 +1,11 @@
 import { Form, Head } from '@inertiajs/react';
+import { useState } from 'react';
 import PrintJobController from '@/actions/App/Http/Controllers/PrintJobController';
+import FileDropzone from '@/components/file-dropzone';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PrintSettingsFields from '@/components/print-settings-fields';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { create } from '@/routes/print';
@@ -15,6 +16,8 @@ type Props = {
 };
 
 export default function PrintCreate({ options }: Props) {
+    const [hasFile, setHasFile] = useState(false);
+
     return (
         <>
             <Head title="Imprimer un document" />
@@ -34,18 +37,13 @@ export default function PrintCreate({ options }: Props) {
                             <div className="grid gap-2">
                                 <Label htmlFor="file">Document PDF</Label>
 
-                                <Input
-                                    id="file"
+                                <FileDropzone
                                     name="file"
-                                    type="file"
-                                    accept="application/pdf,.pdf"
-                                    required
+                                    maxSizeMb={options.maxFileSizeMb}
+                                    onFileChange={(file) =>
+                                        setHasFile(file !== null)
+                                    }
                                 />
-
-                                <p className="text-muted-foreground text-xs">
-                                    Format PDF uniquement,{' '}
-                                    {options.maxFileSizeMb} Mo maximum.
-                                </p>
 
                                 <InputError message={errors.file} />
                             </div>
@@ -55,7 +53,10 @@ export default function PrintCreate({ options }: Props) {
                                 errors={errors}
                             />
 
-                            <Button type="submit" disabled={processing}>
+                            <Button
+                                type="submit"
+                                disabled={processing || !hasFile}
+                            >
                                 {processing && <Spinner />}
                                 Lancer l’impression
                             </Button>

@@ -21,7 +21,9 @@ class ManageUsersTest extends TestCase
 
     public function test_the_list_shows_each_member_with_their_page_count()
     {
-        $admin = $this->admin();
+        // Noms imposés : la liste est triée par nom, et un nom tiré au hasard
+        // rendrait l'ordre — donc le test — imprévisible.
+        $admin = User::factory()->admin()->create(['name' => 'Zoé Admin']);
 
         $member = User::factory()->create(['name' => 'Alice Durand']);
 
@@ -41,6 +43,7 @@ class ManageUsersTest extends TestCase
                 ->has('users', 2)
                 ->where('users.0.name', 'Alice Durand')
                 ->where('users.0.pages_printed', 10)
+                ->where('users.1.name', 'Zoé Admin')
             );
     }
 

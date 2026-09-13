@@ -54,7 +54,7 @@ compromis par construction, il ne doit servir qu'une fois.
 | `EnsureUserIsActive`          | tout le périmètre authentifié : une désactivation ferme la session en cours dès la requête suivante |
 | `EnsureUserIsAdmin`           | toutes les routes `/admin/*`                                                                        |
 | `EnsureUserHasChosenPassword` | tout, sauf la page de changement et la déconnexion                                                  |
-| `PrintJobPolicy`              | un membre ne voit et ne duplique que ses propres tâches                                             |
+| `PrintJobPolicy`              | un membre ne duplique que ses propres tâches, et ne relit que ses propres documents                 |
 
 Aucun contrôleur ne se contente d'un identifiant d'URL : la relance
 administrateur utilise des **liaisons de modèle scopées**
@@ -74,9 +74,19 @@ peut ni se désactiver, ni se retirer ses propres droits.
 | Stockage hors du webroot                                                                  | disque `print-jobs` → `storage/app/print-jobs/`  |
 
 Le nom fourni par le membre n'est conservé que pour l'affichage, et passe par
-`basename()` : il ne peut donc pas porter de chemin. Un fichier déposé n'est
-jamais servi en téléchargement par l'application ; il n'existe que pour être
-envoyé à CUPS.
+`basename()` : il ne peut donc pas porter de chemin.
+
+Un document déposé peut être **relu** par son propriétaire, et par un
+administrateur — qui doit pouvoir vérifier ce qui est sorti de l'imprimante,
+notamment avant de relancer une tâche. Il n'est jamais servi par nginx : la
+route `print.jobs.document` le lit sur un disque situé hors du webroot, après
+que `PrintJobPolicy::view()` a tranché. La réponse porte
+`Cache-Control: private, no-store`, pour que ni Cloudflare ni le navigateur
+n'en gardent une copie.
+
+Consulter n'est pas imprimer : la duplication reste réservée au propriétaire, la
+relance d'un document par un administrateur passant par le back-office, qui la
+journalise.
 
 Un test vérifie qu'un script shell simplement renommé en `.pdf` est refusé, et
 un autre qu'un nom contenant de la syntaxe shell n'atteint jamais le disque.
