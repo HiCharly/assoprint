@@ -5,7 +5,7 @@
 Déroulé complet, du conteneur vide à la première page imprimée depuis
 l'extérieur. Trois documents sont appelés en cours de route :
 
-1. [proxmox-lxc-setup.md](proxmox-lxc-setup.md) — le conteneur et l'imprimante USB
+1. [proxmox-lxc-setup.md](proxmox-lxc-setup.md) — le conteneur LXC
 2. [cups-printer-setup.md](cups-printer-setup.md) — CUPS et la file d'impression
 3. [cloudflare-tunnel-setup.md](cloudflare-tunnel-setup.md) — l'accès distant
 
@@ -15,11 +15,13 @@ Sauf mention contraire, tout s'exécute **dans le conteneur**, en `root`.
 
 ## 1. Le conteneur et l'imprimante
 
-Suivez [proxmox-lxc-setup.md](proxmox-lxc-setup.md) jusqu'à ce que `lsusb`
-affiche l'imprimante **depuis le conteneur**, puis
+Suivez [proxmox-lxc-setup.md](proxmox-lxc-setup.md) jusqu'à ce que le conteneur
+**joigne l'imprimante** sur le réseau, puis
 [cups-printer-setup.md](cups-printer-setup.md) jusqu'à ce qu'une page sorte avec
-`lp`. N'allez pas plus loin tant que ces deux points ne sont pas acquis :
-l'application ne peut rien imprimer que CUPS ne sache déjà imprimer.
+`lp`, **en recto verso et en couleur**. N'allez pas plus loin tant que ces deux
+points ne sont pas acquis : l'application ne peut rien imprimer que CUPS ne
+sache déjà imprimer, et une file mal créée ignore le recto verso sans le
+moindre message d'erreur.
 
 ## 2. Les paquets
 

@@ -1,12 +1,17 @@
-# Conteneur LXC et imprimante USB
+# Conteneur LXC
 
 [← Retour au README](../README.md)
 
-Ce document décrit la création du conteneur qui héberge l'application, et le
-rattachement de l'imprimante USB branchée sur l'hôte Proxmox.
+Ce document décrit la création du conteneur qui héberge l'application.
 
-Les deux autres pièces de l'installation sont documentées à part :
-[CUPS et l'imprimante](cups-printer-setup.md), puis
+L'imprimante est pilotée **par le réseau** : le conteneur n'a besoin d'aucun
+périphérique particulier, et peut donc rester non privilégié. Le passthrough USB,
+envisagé au départ, est conservé en annexe pour le cas où il redeviendrait
+nécessaire — voir aussi [la section 7 de
+cups-printer-setup.md](cups-printer-setup.md#7-pourquoi-pas-lusb), qui explique
+pourquoi il ne mène nulle part dans un conteneur.
+
+Suite du parcours : [CUPS et l'imprimante](cups-printer-setup.md), puis
 [le tunnel Cloudflare](cloudflare-tunnel-setup.md). Le déroulé complet du
 déploiement est dans [deployment.md](deployment.md).
 
@@ -24,40 +29,56 @@ Depuis l'interface Proxmox : **Create CT**, puis
 | Réglage        | Valeur conseillée    | Pourquoi                                                 |
 | -------------- | -------------------- | -------------------------------------------------------- |
 | Template       | `debian-13-standard` | PHP 8.4 dans les dépôts officiels                        |
-| Cœurs          | 2                    | la conversion PDF côté CUPS est le seul pic de charge    |
+| Cœurs          | 2                    | la conversion des PDF est le seul pic de charge          |
 | Mémoire        | 1024 Mo              | Laravel + CUPS + `cloudflared` tiennent largement dedans |
 | Disque         | 8 Go                 | prévoir plus si les PDF déposés ne sont jamais purgés    |
-| Non privilégié | oui                  | voir la section 3                                        |
+| Non privilégié | oui                  | rien ici n'exige de privilèges                           |
 | Réseau         | DHCP ou IP fixe      | aucun port entrant n'a besoin d'être ouvert              |
 
-Notez l'identifiant du conteneur (`<VMID>`), il sert dans toutes les commandes
-qui suivent. Elles s'exécutent **sur l'hôte Proxmox**, pas dans le conteneur.
+Le conteneur doit simplement pouvoir **joindre l'imprimante sur le réseau
+local** : c'est la seule contrainte réseau, avec la sortie Internet dont
+`cloudflared` a besoin.
 
-## 2. Repérer l'imprimante sur l'hôte
+## 2. Vérifier que l'imprimante est joignable
+
+```bash
+pct enter <VMID>
+```
+
+```bash
+ping -c 2 192.168.1.41
+```
+
+Si l'imprimante répond, passez à [la configuration de
+CUPS](cups-printer-setup.md). Sinon, c'est un problème de réseau ou de VLAN à
+régler avant toute chose : rien d'autre ne peut fonctionner tant que ces deux
+machines ne se voient pas.
+
+---
+
+## Annexe — passthrough USB
+
+À ne lire que si l'imprimante ne peut pas être mise sur le réseau. Rappel :
+`ipp-usb` ne démarre pas tout seul dans un conteneur, faute d'événements udev, et
+il faudra donc aussi lui écrire un service systemd maison.
+
+### Repérer le périphérique sur l'hôte
 
 ```bash
 lsusb | grep -i hewlett
 ```
 
-La sortie ressemble à :
-
 ```
 Bus 001 Device 006: ID 03f0:c52a HP, Inc HP Color LaserJet Pro M254dw
 ```
 
-Retenez trois choses : le **bus** (`001`), le **device** (`006`) et l'identifiant
+Retenez le **bus** (`001`), le **device** (`006`) et l'identifiant
 **vendor:product** (`03f0:c52a`). Le nœud correspondant est
 `/dev/bus/usb/001/006`.
 
-```bash
-ls -l /dev/bus/usb/001/006
-```
+### Rattacher le périphérique
 
-## 3. Rattacher l'imprimante au conteneur
-
-Depuis Proxmox 8.1, un périphérique se passe au conteneur avec `--dev0` ; depuis
-8.2, l'interface web propose la même chose via **Resources → Add → Device
-Passthrough**.
+Depuis Proxmox 8.1 :
 
 ```bash
 pct set <VMID> --dev0 path=/dev/bus/usb/001/006,uid=100000,gid=100000
@@ -65,35 +86,26 @@ pct set <VMID> --dev0 path=/dev/bus/usb/001/006,uid=100000,gid=100000
 
 `uid=100000,gid=100000` correspond à `root` **vu de l'intérieur** d'un conteneur
 non privilégié : sans cette correspondance, le nœud appartiendrait à un
-utilisateur inexistant dans le conteneur et CUPS ne pourrait pas l'ouvrir.
-
-Redémarrez le conteneur pour que la correspondance prenne effet :
+utilisateur inexistant dans le conteneur.
 
 ```bash
 pct stop <VMID> && pct start <VMID>
 ```
 
-### Le piège : le numéro de device change
+### Le numéro de device n'est pas stable
 
-`006` n'est pas stable. Débrancher puis rebrancher l'imprimante, ou redémarrer
-l'hôte, lui donne un autre numéro — et le passthrough pointe alors vers un nœud
-qui n'existe plus. L'application affiche dans ce cas une erreur d'imprimante
-introuvable sur chaque tâche.
+Débrancher puis rebrancher l'imprimante, ou redémarrer l'hôte, lui donne un autre
+numéro, et le passthrough pointe alors vers un nœud disparu. Deux parades :
 
-Deux parades, au choix.
-
-**a. Passer le bus entier.** Plus robuste tant que l'imprimante reste branchée
-sur le même port physique. Dans `/etc/pve/lxc/<VMID>.conf` :
+**a. Passer le bus entier** — dans `/etc/pve/lxc/<VMID>.conf` :
 
 ```
 lxc.cgroup2.devices.allow: c 189:* rwm
 lxc.mount.entry: /dev/bus/usb/001 dev/bus/usb/001 none bind,optional,create=dir
 ```
 
-`189` est le _major_ des périphériques USB ; `c 189:* rwm` autorise le conteneur
-à ouvrir n'importe lequel d'entre eux. Cette méthode demande un conteneur
-**privilégié** : c'est un compromis assumé, à ne retenir que si la première
-solution se révèle trop fragile en pratique.
+Cette méthode exige un conteneur **privilégié**, ce qui est un recul net en
+matière de cloisonnement.
 
 **b. Fixer le nom du nœud par une règle udev**, sur l'hôte, dans
 `/etc/udev/rules.d/99-imprimante.rules` :
@@ -106,27 +118,27 @@ SUBSYSTEM=="usb", ATTR{idVendor}=="03f0", ATTR{idProduct}=="c52a", MODE="0660", 
 udevadm control --reload-rules && udevadm trigger
 ```
 
-Le lien `/dev/imprimante` pointe alors toujours vers le bon nœud. Vérifiez
-ensuite que le passthrough suit bien le lien sur votre version de Proxmox ;
-sinon, rabattez-vous sur la solution (a).
+### Revenir en arrière
 
-## 4. Vérifier depuis le conteneur
+Pour retirer un passthrough devenu inutile, sur l'hôte :
 
 ```bash
-pct enter <VMID>
+pct set <VMID> --delete dev0
 ```
 
 ```bash
-apt update && apt install -y usbutils
+rm -f /etc/udev/rules.d/99-imprimante.rules && udevadm control --reload-rules && udevadm trigger
 ```
 
 ```bash
-lsusb | grep -i hewlett
+pct stop <VMID> && pct start <VMID>
 ```
 
-Si l'imprimante apparaît ici, le passthrough fonctionne et vous pouvez passer à
-[la configuration de CUPS](cups-printer-setup.md). Sinon, reprenez l'étape 3 :
-tant que `lsusb` ne voit rien dans le conteneur, CUPS ne verra rien non plus.
+Et dans le conteneur :
+
+```bash
+apt purge -y ipp-usb && apt autoremove -y
+```
 
 ---
 
