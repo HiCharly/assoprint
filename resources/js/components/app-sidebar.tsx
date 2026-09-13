@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-import { LayoutGrid, Printer, ScrollText } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { LayoutGrid, Printer, ScrollText, Server, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -13,8 +13,10 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as adminJobs } from '@/routes/admin/jobs';
+import { index as adminUsers } from '@/routes/admin/users';
 import { create, jobs } from '@/routes/print';
-import type { NavItem } from '@/types';
+import type { Auth, NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
@@ -34,7 +36,22 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
+const adminNavItems: NavItem[] = [
+    {
+        title: 'Membres',
+        href: adminUsers(),
+        icon: Users,
+    },
+    {
+        title: 'Toutes les impressions',
+        href: adminJobs(),
+        icon: Server,
+    },
+];
+
 export function AppSidebar() {
+    const auth = usePage().props.auth as Auth | undefined;
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -51,6 +68,10 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
+
+                {auth?.user?.is_admin === true && (
+                    <NavMain items={adminNavItems} label="Administration" />
+                )}
             </SidebarContent>
 
             <SidebarFooter>
