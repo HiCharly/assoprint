@@ -226,6 +226,14 @@ server {
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+
+        # nginx ne réserve que 4 Ko aux en-têtes d'une réponse FastCGI. Une page
+        # un peu fournie (CSP, cookies de session, en-têtes de sécurité) peut
+        # s'en approcher, et le dépassement se solde par un 502 sans la moindre
+        # trace côté Laravel : PHP a répondu, c'est nginx qui coupe.
+        fastcgi_buffer_size 32k;
+        fastcgi_buffers 8 32k;
+        fastcgi_busy_buffers_size 64k;
     }
 
     location ~ /\.(?!well-known).* {
