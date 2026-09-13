@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import PrintJobStatusBadge from '@/components/print-job-status-badge';
+import { Button } from '@/components/ui/button';
 import {
     Table,
     TableBody,
@@ -8,6 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { document as documentRoute } from '@/routes/print/jobs';
 import type { PrintJob } from '@/types';
 
 type Props = {
@@ -50,9 +52,7 @@ export default function PrintJobsTable({
                     <TableHead>Pages</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Envoyé le</TableHead>
-                    {action && (
-                        <TableHead className="text-right">Action</TableHead>
-                    )}
+                    <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
             </TableHeader>
 
@@ -100,11 +100,26 @@ export default function PrintJobsTable({
                             {formatDate(job.created_at)}
                         </TableCell>
 
-                        {action && (
-                            <TableCell className="text-right">
-                                {action(job)}
-                            </TableCell>
-                        )}
+                        <TableCell>
+                            <div className="flex flex-wrap justify-end gap-2">
+                                {job.file_exists && (
+                                    // Lien classique plutôt qu'Inertia : c'est
+                                    // le PDF lui-même qui s'ouvre, dans un
+                                    // onglet à part, sans quitter la page.
+                                    <Button variant="ghost" size="sm" asChild>
+                                        <a
+                                            href={documentRoute(job.id).url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Voir le PDF
+                                        </a>
+                                    </Button>
+                                )}
+
+                                {action?.(job)}
+                            </div>
+                        </TableCell>
                     </TableRow>
                 ))}
             </TableBody>

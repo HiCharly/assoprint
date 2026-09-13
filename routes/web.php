@@ -29,6 +29,9 @@ Route::middleware(['auth', 'active', 'password.chosen'])->group(function () {
 
     Route::get('print/jobs', [PrintJobController::class, 'index'])->name('print.jobs');
 
+    Route::get('print/jobs/{printJob}/document', [PrintJobController::class, 'document'])
+        ->name('print.jobs.document');
+
     Route::get('print/jobs/{printJob}/duplicate', [PrintJobController::class, 'duplicateCreate'])
         ->name('print.jobs.duplicate.show');
     Route::post('print/jobs/{printJob}/duplicate', [PrintJobController::class, 'duplicate'])
