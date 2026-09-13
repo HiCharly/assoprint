@@ -21,6 +21,13 @@ Toutes les commandes s'exécutent **dans le conteneur**.
 
 ## 1. Installer cloudflared
 
+Le modèle Debian minimal ne fournit pas `curl`, et `ca-certificates` lui est
+indispensable pour valider le certificat de GitHub :
+
+```bash
+apt update && apt install -y curl ca-certificates
+```
+
 ```bash
 curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
 ```
