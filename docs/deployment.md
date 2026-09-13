@@ -187,19 +187,21 @@ usermod -aG lp www-data
 ## 7. Les caches de production
 
 ```bash
-php artisan config:cache
+php artisan optimize
 ```
+
+Une seule commande, qui met en cache la configuration, les événements, les
+routes et les vues.
+
+À refaire après **chaque** modification du `.env` : une valeur changée y reste
+ignorée tant que le cache de configuration n'a pas été régénéré. C'est le piège
+classique du « j'ai pourtant corrigé le fichier ».
+
+L'inverse, utile en cas de doute ou pour diagnostiquer :
 
 ```bash
-php artisan route:cache
+php artisan optimize:clear
 ```
-
-```bash
-php artisan view:cache
-```
-
-À refaire après chaque modification du `.env` — une valeur changée dans `.env`
-reste ignorée tant que `config:cache` n'a pas été relancé.
 
 ## 8. nginx
 
@@ -332,7 +334,7 @@ php artisan migrate --force
 ```
 
 ```bash
-php artisan config:cache && php artisan route:cache && php artisan view:cache
+php artisan optimize
 ```
 
 ```bash

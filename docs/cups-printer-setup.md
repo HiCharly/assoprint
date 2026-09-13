@@ -165,7 +165,7 @@ cd /var/www/assoprint && sed -i 's/^PRINTER_NAME=.*/PRINTER_NAME=HP_M254dw/' .en
 ```
 
 ```bash
-php artisan config:clear && php artisan config:cache && systemctl restart laravel-queue
+php artisan optimize:clear && php artisan optimize && systemctl restart laravel-queue
 ```
 
 Ce nom n'est jamais écrit en dur dans le code : il est lu via
