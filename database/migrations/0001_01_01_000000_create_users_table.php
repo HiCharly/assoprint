@@ -8,6 +8,10 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * Il n'y a ni auto-inscription ni vérification d'email : les comptes sont
+     * créés par un administrateur, d'où l'absence de colonne email_verified_at
+     * et de table password_reset_tokens (voir docs/security.md).
      */
     public function up(): void
     {
@@ -15,16 +19,12 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->boolean('is_admin')->default(false);
+            $table->boolean('is_active')->default(true);
+            $table->boolean('must_change_password')->default(false);
             $table->rememberToken();
             $table->timestamps();
-        });
-
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
         });
 
         Schema::create('sessions', function (Blueprint $table) {
@@ -43,7 +43,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
     }
 };

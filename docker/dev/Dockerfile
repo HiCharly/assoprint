@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         sqlite3 \
         poppler-utils \
         cups-client \
-    && docker-php-ext-install -j"$(nproc)" zip intl pcntl \
+    && docker-php-ext-install -j"$(nproc)" zip intl pcntl opcache \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

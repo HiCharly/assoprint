@@ -28,14 +28,14 @@ Cloudflare (gratuit) pour l'accès distant, sans ouvrir le moindre port entrant.
 
 ## Stack technique
 
-| Couche | Choix |
-|---|---|
-| Backend | Laravel 13 (PHP 8.3), Inertia 2 |
-| Frontend | React 19, TypeScript, Tailwind CSS 4, shadcn/ui |
-| Base de données | SQLite (simple fichier, aucun service à administrer) |
-| File d'attente | Driver `database` + `php artisan queue:work` en service systemd |
-| Impression | CUPS (`lp`, `lpstat`), `pdfinfo` (poppler-utils) pour le comptage de pages |
-| Accès distant | Cloudflare Tunnel (`cloudflared`) |
+| Couche          | Choix                                                                      |
+| --------------- | -------------------------------------------------------------------------- |
+| Backend         | Laravel 13 (PHP 8.3), Inertia 2                                            |
+| Frontend        | React 19, TypeScript, Tailwind CSS 4, shadcn/ui                            |
+| Base de données | SQLite (simple fichier, aucun service à administrer)                       |
+| File d'attente  | Driver `database` + `php artisan queue:work` en service systemd            |
+| Impression      | CUPS (`lp`, `lpstat`), `pdfinfo` (poppler-utils) pour le comptage de pages |
+| Accès distant   | Cloudflare Tunnel (`cloudflared`)                                          |
 
 L'authentification s'appuie sur Laravel Fortify, dont seules les briques utiles
 sont activées : connexion par session et changement de mot de passe. Inscription
@@ -75,7 +75,7 @@ npm run dev
 ```
 
 L'application répond sur http://localhost:8000. Le premier terminal fait tourner
-le serveur web *et* le worker de queue, sans lequel aucune impression ne part.
+le serveur web _et_ le worker de queue, sans lequel aucune impression ne part.
 
 ### Commandes utiles
 
