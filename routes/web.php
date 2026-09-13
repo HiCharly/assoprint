@@ -31,4 +31,5 @@ Route::middleware(['auth', 'active', 'password.chosen'])->group(function () {
         ->name('print.jobs.duplicate');
 });
 
+require __DIR__.'/admin.php';
 require __DIR__.'/settings.php';

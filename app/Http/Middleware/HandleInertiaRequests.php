@@ -42,6 +42,11 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+
+            // Mot de passe temporaire fraîchement généré par un administrateur.
+            // Il ne vit que le temps d'une redirection : rafraîchir la page le
+            // fait disparaître pour de bon.
+            'temporaryPassword' => fn () => $request->session()->get('temporaryPassword'),
         ];
     }
 }
