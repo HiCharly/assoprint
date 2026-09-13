@@ -67,4 +67,42 @@ class PrintJobListTest extends TestCase
 
         $this->assertSame(0, $user->pagesPrinted());
     }
+
+    public function test_a_fix_by_an_administrator_is_not_charged_to_the_member()
+    {
+        $user = User::factory()->create();
+
+        PrintJob::factory()->printed()->for($user)->create([
+            'page_count' => 5,
+            'copies' => 1,
+        ]);
+
+        // Le document n'était pas sorti : l'administrateur le renvoie. Le
+        // membre n'a pas à payer deux fois une feuille qu'il n'a jamais eue.
+        PrintJob::factory()->printed()->troubleshooting()->for($user)->create([
+            'page_count' => 5,
+            'copies' => 1,
+        ]);
+
+        $this->assertSame(5, $user->pagesPrinted());
+    }
+
+    public function test_a_reprint_asked_by_the_member_is_charged_twice()
+    {
+        $user = User::factory()->create();
+
+        PrintJob::factory()->printed()->for($user)->create([
+            'page_count' => 5,
+            'copies' => 1,
+        ]);
+
+        // Second exemplaire voulu par le membre : deux impressions, deux fois
+        // les pages.
+        PrintJob::factory()->printed()->for($user)->create([
+            'page_count' => 5,
+            'copies' => 1,
+        ]);
+
+        $this->assertSame(10, $user->pagesPrinted());
+    }
 }

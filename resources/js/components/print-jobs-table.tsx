@@ -16,7 +16,7 @@ type Props = {
     jobs: PrintJob[];
     /** Affiche la colonne « Membre » : utile côté back-office uniquement. */
     showMember?: boolean;
-    /** Action proposée sur chaque ligne (dupliquer, relancer…). */
+    /** Action proposée sur chaque ligne (réimprimer, dépanner…). */
     action?: (job: PrintJob) => ReactNode;
     emptyMessage?: string;
 };
@@ -63,7 +63,9 @@ export default function PrintJobsTable({
                             {job.original_filename}
                             {job.is_duplicate && (
                                 <span className="text-muted-foreground ml-2 text-xs">
-                                    (réimpression)
+                                    {job.counts_pages
+                                        ? '(réimpression)'
+                                        : '(dépannage)'}
                                 </span>
                             )}
                         </TableCell>
@@ -81,6 +83,10 @@ export default function PrintJobsTable({
                             {job.page_count === null
                                 ? '—'
                                 : `${job.page_count} × ${job.copies} = ${job.page_count * job.copies}`}
+
+                            {!job.counts_pages && (
+                                <p className="text-xs">non comptées</p>
+                            )}
                         </TableCell>
 
                         <TableCell>

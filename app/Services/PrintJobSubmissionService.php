@@ -59,12 +59,18 @@ class PrintJobSubmissionService
 
     /**
      * Queue an already deposited PDF again, with possibly different settings.
+     *
+     * `$countsPages` distingue les deux raisons de réimprimer : le membre qui
+     * veut un second exemplaire (ses pages comptent), et l'administrateur qui
+     * dépanne un document jamais sorti (elles ne comptent pas — le membre
+     * paierait deux fois une feuille qu'il n'a pas eue).
      */
     public function resubmit(
         PrintJob $original,
         int $copies,
         Duplex $duplex,
         ColorMode $colorMode,
+        bool $countsPages = true,
     ): PrintJob {
         $printJob = new PrintJob([
             'original_filename' => $original->original_filename,
@@ -74,6 +80,7 @@ class PrintJobSubmissionService
             'color_mode' => $colorMode,
             'page_count' => $original->page_count,
             'duplicated_from_id' => $original->id,
+            'counts_pages' => $countsPages,
         ]);
 
         $printJob->user()->associate($original->user_id);

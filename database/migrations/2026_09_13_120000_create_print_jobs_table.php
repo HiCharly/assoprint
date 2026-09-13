@@ -25,12 +25,17 @@ return new class extends Migration
             $table->text('error_message')->nullable();
             $table->string('cups_job_id')->nullable();
             $table->foreignId('duplicated_from_id')->nullable()->constrained('print_jobs')->nullOnDelete();
+            // Un dépannage — l'administrateur renvoie un document qui n'est pas
+            // sorti — n'est pas une nouvelle impression : ses pages ne sont pas
+            // portées au compteur du membre, qui paierait deux fois une feuille
+            // qu'il n'a jamais eue.
+            $table->boolean('counts_pages')->default(true);
             $table->timestamp('printed_at')->nullable();
             $table->timestamps();
 
             // Le compteur de pages d'un membre et sa liste de tâches lisent
             // toujours par utilisateur, du plus récent au plus ancien.
-            $table->index(['user_id', 'status']);
+            $table->index(['user_id', 'status', 'counts_pages']);
         });
     }
 

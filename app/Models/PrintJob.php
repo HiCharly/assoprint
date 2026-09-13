@@ -28,12 +28,13 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $error_message
  * @property string|null $cups_job_id
  * @property int|null $duplicated_from_id
+ * @property bool $counts_pages
  * @property Carbon|null $printed_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user
  */
-#[Fillable(['original_filename', 'storage_path', 'copies', 'duplex', 'color_mode', 'page_count', 'duplicated_from_id'])]
+#[Fillable(['original_filename', 'storage_path', 'copies', 'duplex', 'color_mode', 'page_count', 'duplicated_from_id', 'counts_pages'])]
 class PrintJob extends Model
 {
     /** @use HasFactory<PrintJobFactory> */
@@ -58,6 +59,7 @@ class PrintJob extends Model
             'duplex' => Duplex::class,
             'color_mode' => ColorMode::class,
             'status' => PrintJobStatus::class,
+            'counts_pages' => 'boolean',
             'printed_at' => 'datetime',
         ];
     }
