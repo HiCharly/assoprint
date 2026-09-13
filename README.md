@@ -2,8 +2,8 @@
 
 Application web d'impression à distance pour un club de basket : un membre
 dépose un PDF depuis n'importe où, choisit ses options d'impression, et le
-document sort sur l'imprimante du club — une HP Color LaserJet Pro M254dw
-branchée en USB à un conteneur LXC Proxmox.
+document sort sur l'imprimante du club — une HP Color LaserJet Pro M254dw,
+pilotée en réseau depuis un conteneur LXC Proxmox.
 
 L'ensemble tourne sur l'infrastructure Proxmox existante, sans aucun service
 payant : SQLite comme base de données, CUPS pour l'impression, et un tunnel
@@ -52,8 +52,8 @@ authentification et passkeys sont désactivées et leur code retiré du projet.
 | Document                                                           | Contenu                                                                       |
 | ------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
 | [docs/deployment.md](docs/deployment.md)                           | le déploiement de bout en bout, du conteneur vide à la première page imprimée |
-| [docs/proxmox-lxc-setup.md](docs/proxmox-lxc-setup.md)             | création du conteneur LXC et passthrough USB de l'imprimante                  |
-| [docs/cups-printer-setup.md](docs/cups-printer-setup.md)           | installation de CUPS, détection de la M254dw, impression de test              |
+| [docs/proxmox-lxc-setup.md](docs/proxmox-lxc-setup.md)             | création du conteneur LXC (et, en annexe, le passthrough USB)                 |
+| [docs/cups-printer-setup.md](docs/cups-printer-setup.md)           | CUPS, création de la file réseau et impression de test                        |
 | [docs/cloudflare-tunnel-setup.md](docs/cloudflare-tunnel-setup.md) | tunnel Cloudflare, DNS et sous-domaine                                        |
 | [docs/security.md](docs/security.md)                               | les mesures de sécurité réellement en place, fichier par fichier              |
 
