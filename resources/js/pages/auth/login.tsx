@@ -26,18 +26,20 @@ export default function Login({ status }: Props) {
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Adresse email</Label>
+                                <Label htmlFor="login">Identifiant</Label>
                                 <Input
-                                    id="email"
-                                    type="email"
-                                    name="email"
+                                    id="login"
+                                    type="text"
+                                    name="login"
                                     required
                                     autoFocus
                                     tabIndex={1}
-                                    autoComplete="email"
-                                    placeholder="prenom.nom@exemple.fr"
+                                    autoComplete="username"
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                    placeholder="prenom.nom"
                                 />
-                                <InputError message={errors.email} />
+                                <InputError message={errors.login} />
                             </div>
 
                             <div className="grid gap-2">
@@ -90,5 +92,5 @@ export default function Login({ status }: Props) {
 
 Login.layout = {
     title: 'Connexion',
-    description: 'Saisissez votre adresse email et votre mot de passe.',
+    description: 'Saisissez votre identifiant et votre mot de passe.',
 };

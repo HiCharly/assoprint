@@ -39,7 +39,7 @@ class UserController extends Controller
             ->map(fn (User $user) => [
                 'id' => $user->id,
                 'name' => $user->name,
-                'email' => $user->email,
+                'login' => $user->login,
                 'is_admin' => $user->is_admin,
                 'is_active' => $user->is_active,
                 'must_change_password' => $user->must_change_password,
@@ -68,7 +68,7 @@ class UserController extends Controller
 
         $user = new User([
             'name' => $request->string('name')->value(),
-            'email' => $request->string('email')->value(),
+            'login' => $request->string('login')->value(),
             'password' => $password,
         ]);
 
@@ -96,7 +96,7 @@ class UserController extends Controller
     }
 
     /**
-     * Update the name, email and role of an account.
+     * Update the name, login and role of an account.
      */
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
@@ -113,7 +113,7 @@ class UserController extends Controller
 
         $user->fill([
             'name' => $request->string('name')->value(),
-            'email' => $request->string('email')->value(),
+            'login' => $request->string('login')->value(),
         ]);
 
         $user->forceFill(['is_admin' => $isAdmin])->save();
@@ -254,7 +254,7 @@ class UserController extends Controller
         return [
             'id' => $user->id,
             'name' => $user->name,
-            'email' => $user->email,
+            'login' => $user->login,
             'is_admin' => $user->is_admin,
             'is_active' => $user->is_active,
             'must_change_password' => $user->must_change_password,

@@ -4,14 +4,19 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 /**
  * Crée le compte administrateur initial.
  *
- * Le mot de passe est tiré au hasard et affiché une seule fois, en sortie de
- * commande : il n'est ni stocké en clair, ni journalisé, ni transmis par email.
- * L'administrateur devra le remplacer dès sa première connexion.
+ * Le mot de passe par défaut est volontairement trivial, pour que la toute
+ * première connexion ne bute sur rien. Il ne vaut que le temps de celle-ci :
+ * `must_change_password` interdit au compte la moindre autre action tant qu'un
+ * vrai mot de passe n'a pas été choisi, et les règles de production imposent
+ * alors douze caractères avec majuscules, chiffres et symboles.
+ *
+ * L'application étant joignable depuis Internet, cette première connexion doit
+ * suivre le déploiement immédiatement : `admin`/`admin` est ce que teste en
+ * premier n'importe quel robot.
  */
 class AdminUserSeeder extends Seeder
 {
@@ -20,19 +25,18 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $email = (string) config('assoprint.admin_email');
+        $login = (string) config('assoprint.admin_login');
+        $password = (string) config('assoprint.admin_password');
 
-        if (User::where('email', $email)->exists()) {
-            $this->command->warn("Un compte existe déjà pour {$email} : aucun administrateur créé.");
+        if (User::where('login', $login)->exists()) {
+            $this->command->warn("Un compte existe déjà pour « {$login} » : aucun administrateur créé.");
 
             return;
         }
 
-        $password = Str::password(16);
-
         User::create([
             'name' => 'Administrateur',
-            'email' => $email,
+            'login' => $login,
             'password' => $password,
         ])->forceFill([
             'is_admin' => true,
@@ -41,11 +45,12 @@ class AdminUserSeeder extends Seeder
 
         $this->command->newLine();
         $this->command->info('Compte administrateur créé.');
-        $this->command->line("  Email          : {$email}");
+        $this->command->line("  Identifiant    : {$login}");
         $this->command->line("  Mot de passe   : {$password}");
         $this->command->newLine();
-        $this->command->warn('Ce mot de passe ne sera plus jamais affiché. Notez-le maintenant.');
-        $this->command->warn('Il devra être remplacé à la première connexion.');
+        $this->command->warn('Connectez-vous immédiatement : ce mot de passe est trivial, et');
+        $this->command->warn("l'application est joignable depuis Internet. Il devra être remplacé");
+        $this->command->warn('dès la première connexion.');
         $this->command->newLine();
     }
 }

@@ -124,7 +124,8 @@ PRINTER_NAME=HP_Color_LaserJet_Pro_M254dw
 PRINT_MAX_COPIES=100
 PRINT_MAX_FILE_SIZE_KB=51200
 
-ADMIN_EMAIL=admin@mondomaine.fr
+ADMIN_LOGIN=admin
+ADMIN_PASSWORD=admin
 ```
 
 `APP_DEBUG=false` n'est pas un détail : en `true`, la moindre erreur afficherait
@@ -148,9 +149,16 @@ php artisan migrate --force
 php artisan db:seed --force
 ```
 
-Le seeder affiche **une seule fois** le mot de passe du compte administrateur.
-Notez-le maintenant : il n'est stocké nulle part en clair, et devra être changé
-dès la première connexion.
+Le seeder crée le compte administrateur avec les identifiants ci-dessus.
+
+**Connectez-vous immédiatement après cette étape.** Le mot de passe par défaut
+est trivial et l'application est joignable depuis Internet : `admin`/`admin` est
+ce que teste en premier n'importe quel robot. L'application impose le
+remplacement du mot de passe dès la première connexion, ce qui referme la
+fenêtre — mais elle reste ouverte tant que personne ne s'est connecté.
+
+Si le déploiement n'est pas suivi d'une connexion immédiate, changez
+`ADMIN_PASSWORD` dans le `.env` **avant** de lancer le seeder.
 
 ## 6. Les droits
 

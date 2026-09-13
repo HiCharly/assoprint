@@ -17,7 +17,7 @@ import { create, index, show } from '@/routes/admin/users';
 type AdminUser = {
     id: number;
     name: string;
-    email: string;
+    login: string;
     is_admin: boolean;
     is_active: boolean;
     must_change_password: boolean;
@@ -51,7 +51,7 @@ export default function AdminUsers({ users }: Props) {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Nom</TableHead>
-                            <TableHead>Email</TableHead>
+                            <TableHead>Identifiant</TableHead>
                             <TableHead>Rôle</TableHead>
                             <TableHead>Statut</TableHead>
                             <TableHead className="text-right">
@@ -76,7 +76,7 @@ export default function AdminUsers({ users }: Props) {
                                 </TableCell>
 
                                 <TableCell className="text-muted-foreground">
-                                    {user.email}
+                                    {user.login}
                                 </TableCell>
 
                                 <TableCell>

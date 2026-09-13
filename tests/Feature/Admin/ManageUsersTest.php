@@ -52,12 +52,12 @@ class ManageUsersTest extends TestCase
             ->followingRedirects()
             ->post(route('admin.users.store'), [
                 'name' => 'Bob Martin',
-                'email' => 'bob@exemple.fr',
+                'login' => 'bob.martin',
             ]);
 
         $response->assertOk();
 
-        $member = User::where('email', 'bob@exemple.fr')->sole();
+        $member = User::where('login', 'bob.martin')->sole();
 
         $this->assertFalse($member->is_admin);
         $this->assertTrue($member->is_active);
@@ -85,24 +85,24 @@ class ManageUsersTest extends TestCase
 
         $this->actingAs($admin)->post(route('admin.users.store'), [
             'name' => 'Chef',
-            'email' => 'chef@exemple.fr',
+            'login' => 'chef',
             'is_admin' => '1',
         ]);
 
-        $this->assertTrue(User::where('email', 'chef@exemple.fr')->sole()->is_admin);
+        $this->assertTrue(User::where('login', 'chef')->sole()->is_admin);
     }
 
-    public function test_two_accounts_can_not_share_an_email()
+    public function test_two_accounts_can_not_share_a_login()
     {
         $admin = $this->admin();
-        $existing = User::factory()->create(['email' => 'deja@exemple.fr']);
+        $existing = User::factory()->create(['login' => 'deja.pris']);
 
         $this->actingAs($admin)
             ->post(route('admin.users.store'), [
                 'name' => 'Doublon',
-                'email' => $existing->email,
+                'login' => $existing->login,
             ])
-            ->assertSessionHasErrors('email');
+            ->assertSessionHasErrors('login');
 
         $this->assertSame(2, User::count());
     }
@@ -115,7 +115,7 @@ class ManageUsersTest extends TestCase
         $this->actingAs($admin)
             ->put(route('admin.users.update', $member), [
                 'name' => 'Nouveau Nom',
-                'email' => 'nouveau@exemple.fr',
+                'login' => 'nouveau.nom',
                 'is_admin' => '1',
             ])
             ->assertSessionHasNoErrors()
@@ -124,7 +124,7 @@ class ManageUsersTest extends TestCase
         $member->refresh();
 
         $this->assertSame('Nouveau Nom', $member->name);
-        $this->assertSame('nouveau@exemple.fr', $member->email);
+        $this->assertSame('nouveau.nom', $member->login);
         $this->assertTrue($member->is_admin);
     }
 
@@ -136,7 +136,7 @@ class ManageUsersTest extends TestCase
             ->from(route('admin.users.edit', $admin))
             ->put(route('admin.users.update', $admin), [
                 'name' => $admin->name,
-                'email' => $admin->email,
+                'login' => $admin->login,
             ])
             ->assertSessionHasErrors('is_admin');
 
@@ -219,5 +219,35 @@ class ManageUsersTest extends TestCase
             ->once()
             ->withArgs(fn (string $message, array $context) => str_contains($message, 'réinitialisation')
                 && $context === ['admin_id' => $admin->id, 'user_id' => $member->id]);
+    }
+
+    public function test_a_login_is_normalised_to_lowercase()
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->post(route('admin.users.store'), [
+            'name' => 'Claire Dupont',
+            'login' => '  Claire.DUPONT  ',
+        ])->assertSessionHasNoErrors();
+
+        // Un identifiant se dicte au téléphone : la casse et les espaces de
+        // bord ne doivent pas décider si la connexion aboutit.
+        $this->assertTrue(User::where('login', 'claire.dupont')->exists());
+    }
+
+    public function test_a_login_can_not_contain_spaces_or_accents()
+    {
+        $admin = $this->admin();
+
+        foreach (['claire dupont', 'clairé', 'claire@exemple.fr', 'ab'] as $login) {
+            $this->actingAs($admin)
+                ->post(route('admin.users.store'), [
+                    'name' => 'Claire Dupont',
+                    'login' => $login,
+                ])
+                ->assertSessionHasErrors('login');
+        }
+
+        $this->assertSame(1, User::count());
     }
 }

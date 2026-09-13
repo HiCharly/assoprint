@@ -25,7 +25,7 @@ export default function Profile() {
                 <Heading
                     variant="small"
                     title="Profil"
-                    description="Modifiez votre nom et votre adresse email"
+                    description="Modifiez votre nom et votre identifiant"
                 />
 
                 <Form
@@ -57,22 +57,24 @@ export default function Profile() {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Adresse email</Label>
+                                <Label htmlFor="login">Identifiant</Label>
 
                                 <Input
-                                    id="email"
-                                    type="email"
+                                    id="login"
+                                    type="text"
                                     className="mt-1 block w-full"
-                                    defaultValue={auth.user.email}
-                                    name="email"
+                                    defaultValue={auth.user.login}
+                                    name="login"
                                     required
                                     autoComplete="username"
-                                    placeholder="Adresse email"
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                    placeholder="identifiant"
                                 />
 
                                 <InputError
                                     className="mt-2"
-                                    message={errors.email}
+                                    message={errors.login}
                                 />
                             </div>
 

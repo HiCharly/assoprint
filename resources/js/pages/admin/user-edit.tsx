@@ -22,7 +22,7 @@ export default function AdminUserEdit({ user }: Props) {
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <Heading
                     title={`Modifier ${user.name}`}
-                    description="Nom, adresse email et rôle de ce compte."
+                    description="Nom, identifiant et rôle de ce compte."
                 />
 
                 <Form
@@ -46,18 +46,20 @@ export default function AdminUserEdit({ user }: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="login">Identifiant</Label>
 
                                 <Input
-                                    id="email"
-                                    name="email"
-                                    type="email"
+                                    id="login"
+                                    name="login"
+                                    type="text"
                                     required
                                     autoComplete="off"
-                                    defaultValue={user.email}
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                    defaultValue={user.login}
                                 />
 
-                                <InputError message={errors.email} />
+                                <InputError message={errors.login} />
                             </div>
 
                             <div className="flex items-center space-x-3">

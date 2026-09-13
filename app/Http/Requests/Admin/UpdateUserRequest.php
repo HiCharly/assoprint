@@ -2,13 +2,23 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Concerns\ProfileValidationRules;
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateUserRequest extends FormRequest
 {
+    use ProfileValidationRules;
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge($this->normalisedLogin($this->input('login')));
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -20,14 +30,18 @@ class UpdateUserRequest extends FormRequest
         $user = $this->route('user');
 
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required', 'string', 'lowercase', 'email', 'max:255',
-                Rule::unique(User::class)->ignore($user->id),
-            ],
-            // Une case décochée n'est tout simplement pas envoyée par le
-            // navigateur : l'absence vaut « non administrateur ».
+            ...$this->profileRules($user->id),
             'is_admin' => ['nullable', 'boolean'],
         ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->loginMessages();
     }
 }

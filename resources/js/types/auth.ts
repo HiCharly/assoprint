@@ -1,7 +1,7 @@
 export type User = {
     id: number;
     name: string;
-    email: string;
+    login: string;
     avatar?: string;
     is_admin: boolean;
     is_active: boolean;

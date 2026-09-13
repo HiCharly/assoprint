@@ -10,15 +10,18 @@ return new class extends Migration
      * Run the migrations.
      *
      * Il n'y a ni auto-inscription ni vérification d'email : les comptes sont
-     * créés par un administrateur, d'où l'absence de colonne email_verified_at
-     * et de table password_reset_tokens (voir docs/security.md).
+     * créés par un administrateur, et les membres se connectent avec un simple
+     * identifiant. D'où l'absence de colonne email et de table
+     * password_reset_tokens (voir docs/security.md).
      */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->unique();
+            // Identifiant de connexion, et non une adresse email : l'application
+            // n'envoie aucun message, et tous les membres n'ont pas d'adresse.
+            $table->string('login')->unique();
             $table->string('password');
             $table->boolean('is_admin')->default(false);
             $table->boolean('is_active')->default(true);

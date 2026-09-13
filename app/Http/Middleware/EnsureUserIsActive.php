@@ -32,7 +32,7 @@ class EnsureUserIsActive
             $request->session()->regenerateToken();
 
             return redirect()->route('login')->withErrors([
-                'email' => __('Ce compte a été désactivé. Contactez un administrateur.'),
+                'login' => __('Ce compte a été désactivé. Contactez un administrateur.'),
             ]);
         }
 

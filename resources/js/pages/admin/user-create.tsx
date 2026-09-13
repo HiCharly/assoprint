@@ -42,18 +42,26 @@ export default function AdminUserCreate() {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="login">Identifiant</Label>
 
                                 <Input
-                                    id="email"
-                                    name="email"
-                                    type="email"
+                                    id="login"
+                                    name="login"
+                                    type="text"
                                     required
                                     autoComplete="off"
-                                    placeholder="membre@exemple.fr"
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                    placeholder="prenom.nom"
                                 />
 
-                                <InputError message={errors.email} />
+                                <p className="text-muted-foreground text-xs">
+                                    Lettres sans accent, chiffres, point, tiret
+                                    ou tiret bas. C’est ce que le membre saisira
+                                    pour se connecter.
+                                </p>
+
+                                <InputError message={errors.login} />
                             </div>
 
                             <div className="flex items-center space-x-3">

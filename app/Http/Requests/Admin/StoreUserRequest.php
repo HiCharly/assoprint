@@ -2,13 +2,22 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Models\User;
+use App\Concerns\ProfileValidationRules;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends FormRequest
 {
+    use ProfileValidationRules;
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge($this->normalisedLogin($this->input('login')));
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -20,11 +29,20 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
+            ...$this->profileRules(),
             // Une case décochée n'est tout simplement pas envoyée par le
             // navigateur : l'absence vaut « non administrateur ».
             'is_admin' => ['nullable', 'boolean'],
         ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->loginMessages();
     }
 }

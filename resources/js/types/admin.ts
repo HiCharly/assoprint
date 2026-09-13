@@ -1,7 +1,7 @@
 export type AdminUser = {
     id: number;
     name: string;
-    email: string;
+    login: string;
     is_admin: boolean;
     is_active: boolean;
     must_change_password: boolean;
