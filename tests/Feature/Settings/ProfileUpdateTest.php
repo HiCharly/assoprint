@@ -30,7 +30,7 @@ class ProfileUpdateTest extends TestCase
             ->actingAs($user)
             ->patch(route('profile.update'), [
                 'name' => 'Test User',
-                'email' => 'test@example.com',
+                'login' => 'test.user',
             ]);
 
         $response
@@ -40,7 +40,7 @@ class ProfileUpdateTest extends TestCase
         $user->refresh();
 
         $this->assertSame('Test User', $user->name);
-        $this->assertSame('test@example.com', $user->email);
+        $this->assertSame('test.user', $user->login);
     }
 
     public function test_users_can_not_delete_their_own_account()

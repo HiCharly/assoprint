@@ -42,7 +42,7 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureAuthentication(): void
     {
         Fortify::authenticateUsing(function (Request $request): ?User {
-            $user = User::where('email', (string) $request->input(Fortify::username()))->first();
+            $user = User::where('login', (string) $request->input(Fortify::username()))->first();
 
             if ($user === null || ! $user->is_active) {
                 return null;

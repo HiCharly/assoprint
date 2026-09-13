@@ -16,7 +16,7 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property string $name
- * @property string $email
+ * @property string $login
  * @property string $password
  * @property bool $is_admin
  * @property bool $is_active
@@ -26,7 +26,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read Collection<int, PrintJob> $printJobs
  */
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'login', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {

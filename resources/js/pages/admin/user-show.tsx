@@ -27,7 +27,7 @@ export default function AdminUserShow({ user, pagesPrinted, jobs }: Props) {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
                         title={user.name}
-                        description={`${user.email} — ${pagesPrinted} page${pagesPrinted > 1 ? 's' : ''} imprimée${pagesPrinted > 1 ? 's' : ''} au total.`}
+                        description={`${user.login} — ${pagesPrinted} page${pagesPrinted > 1 ? 's' : ''} imprimée${pagesPrinted > 1 ? 's' : ''} au total.`}
                     />
 
                     <div className="flex flex-wrap gap-2">

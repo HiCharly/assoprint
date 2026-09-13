@@ -7,13 +7,19 @@ return [
     | Compte administrateur initial
     |--------------------------------------------------------------------------
     |
-    | Adresse du compte créé par AdminUserSeeder lors du premier déploiement.
-    | Son mot de passe est tiré au hasard et affiché une seule fois en sortie de
-    | `php artisan migrate --seed` : il n'est jamais stocké ailleurs qu'en base,
-    | sous forme de hash.
+    | Identifiant et mot de passe du compte créé par AdminUserSeeder lors du
+    | premier déploiement. Le mot de passe par défaut ne vaut que pour la toute
+    | première connexion : le compte ne peut rien faire d'autre que le remplacer
+    | (middleware EnsureUserHasChosenPassword).
+    |
+    | Les deux valeurs peuvent être changées dans le .env avant de lancer le
+    | seeder, ce qui est recommandé si le déploiement n'est pas suivi d'une
+    | connexion immédiate.
     |
     */
 
-    'admin_email' => env('ADMIN_EMAIL', 'admin@assoprint.local'),
+    'admin_login' => env('ADMIN_LOGIN', 'admin'),
+
+    'admin_password' => env('ADMIN_PASSWORD', 'admin'),
 
 ];

@@ -10,19 +10,23 @@ croire sur parole. Ce qui n'est délibérément pas fait est dit aussi, à la fi
 
 ## Authentification
 
-| Mesure                                                                          | Où                                                                 |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Hachage des mots de passe par le driver par défaut de Laravel (bcrypt, coût 12) | `config/hashing.php`, `BCRYPT_ROUNDS`                              |
-| Limitation des tentatives de connexion : 5 par minute et par couple email/IP    | `FortifyServiceProvider::configureRateLimiting()`                  |
-| Cookie de session `http_only` et `same_site=lax`                                | `config/session.php`                                               |
-| Cookie de session `secure` en production                                        | `SESSION_SECURE_COOKIE=true` (voir [deployment.md](deployment.md)) |
-| Session régénérée et autres sessions fermées au changement de mot de passe      | `ForcedPasswordChangeController::update()`                         |
-| Aucune inscription publique                                                     | `config/fortify.php` : `features` vide                             |
+| Mesure                                                                             | Où                                                                 |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Hachage des mots de passe par le driver par défaut de Laravel (bcrypt, coût 12)    | `config/hashing.php`, `BCRYPT_ROUNDS`                              |
+| Limitation des tentatives de connexion : 5 par minute et par couple identifiant/IP | `FortifyServiceProvider::configureRateLimiting()`                  |
+| Cookie de session `http_only` et `same_site=lax`                                   | `config/session.php`                                               |
+| Cookie de session `secure` en production                                           | `SESSION_SECURE_COOKIE=true` (voir [deployment.md](deployment.md)) |
+| Session régénérée et autres sessions fermées au changement de mot de passe         | `ForcedPasswordChangeController::update()`                         |
+| Aucune inscription publique                                                        | `config/fortify.php` : `features` vide                             |
 
 Un compte désactivé est refusé **dès la connexion**
 (`FortifyServiceProvider::configureAuthentication()`), avec le message d'erreur
 générique des identifiants invalides : distinguer « compte désactivé » de « mot
-de passe faux » révélerait à un inconnu qu'une adresse existe bel et bien.
+de passe faux » révélerait à un inconnu qu'un identifiant existe bel et bien.
+
+Les membres se connectent avec un **identifiant**, pas une adresse email :
+l'application n'envoyant aucun message, une adresse n'aurait servi à rien, et
+tous les membres du club n'en ont pas forcément une.
 
 ### Mots de passe oubliés, sans email
 
@@ -167,9 +171,17 @@ qu'aucun mot de passe temporaire ne s'y glisse.
   proposait ; elles ont été retirées, code compris. Pour une dizaine de
   bénévoles qui impriment des convocations, elles ajouteraient surtout du
   support à assurer.
-- **Pas de vérification d'adresse email.** Les comptes sont créés par un
-  administrateur qui connaît les membres ; l'adresse sert d'identifiant, pas de
-  canal de confiance.
+- **Pas d'adresse email du tout.** Les comptes sont créés par un administrateur
+  qui connaît les membres ; un identifiant suffit à les distinguer, et
+  l'application n'a aucun message à leur envoyer.
+- **Un mot de passe administrateur initial trivial** (`admin`/`admin`), à la
+  demande explicite du club. Le risque est borné par le middleware
+  `EnsureUserHasChosenPassword`, qui interdit toute autre action tant que ce mot
+  de passe n'a pas été remplacé, et par les règles de production — douze
+  caractères, casse mixte, chiffres et symboles — qui s'appliquent au
+  remplaçant. La fenêtre reste ouverte tant que personne ne s'est connecté :
+  `ADMIN_PASSWORD` permet d'y couper court si le déploiement n'est pas suivi
+  d'une connexion immédiate.
 - **Pas de chiffrement des PDF au repos.** Ils sont hors du webroot et
   inaccessibles par HTTP ; le chiffrement supposerait une gestion de clés qui
   n'apporterait rien tant que le conteneur lui-même n'est pas compromis.

@@ -15,9 +15,9 @@ class AccountStatusTest extends TestCase
         $user = User::factory()->inactive()->create();
 
         $this->post(route('login.store'), [
-            'email' => $user->email,
+            'login' => $user->login,
             'password' => 'password',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors('login');
 
         $this->assertGuest();
     }
@@ -27,7 +27,7 @@ class AccountStatusTest extends TestCase
         $user = User::factory()->create();
 
         $this->post(route('login.store'), [
-            'email' => $user->email,
+            'login' => $user->login,
             'password' => 'password',
         ]);
 
