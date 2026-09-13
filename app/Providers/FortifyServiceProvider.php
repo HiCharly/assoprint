@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -25,16 +27,39 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureAuthentication();
         $this->configureViews();
         $this->configureRateLimiting();
     }
 
     /**
+     * Configure how credentials are verified.
+     *
+     * Un compte désactivé est refusé dès la connexion, avec le message d'erreur
+     * générique : distinguer « compte désactivé » de « identifiants invalides »
+     * à ce stade révélerait l'existence de l'adresse à un inconnu.
+     */
+    private function configureAuthentication(): void
+    {
+        Fortify::authenticateUsing(function (Request $request): ?User {
+            $user = User::where('email', (string) $request->input(Fortify::username()))->first();
+
+            if ($user === null || ! $user->is_active) {
+                return null;
+            }
+
+            return Hash::check((string) $request->input('password'), $user->password)
+                ? $user
+                : null;
+        });
+    }
+
+    /**
      * Configure Fortify views.
      *
-     * Only the login view is registered: registration, email verification and
-     * password resets by email are disabled (see config/fortify.php). Forgotten
-     * passwords are handled by an administrator instead, see docs/security.md.
+     * Seule la vue de connexion est enregistrée : inscription, vérification
+     * d'email et réinitialisation par email sont désactivées (config/fortify.php).
+     * Un mot de passe oublié passe par un administrateur, voir docs/security.md.
      */
     private function configureViews(): void
     {
