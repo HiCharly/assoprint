@@ -69,6 +69,17 @@ git clone git@github.com:HiCharly/assoprint.git /var/www/assoprint
 cd /var/www/assoprint
 ```
 
+Composer refuse de travailler en root sans confirmation, et pose la question à
+chaque commande : `Do not run Composer as root/super user! Continue as
+root/super user [yes]?`. Dans un conteneur dédié à cette seule application,
+installer en root est sans conséquence — la mise en garde vise les postes
+partagés, où des dépendances installées en root deviendraient inaccessibles aux
+autres comptes. Autant couper l'invite :
+
+```bash
+export COMPOSER_ALLOW_SUPERUSER=1
+```
+
 ```bash
 composer install --no-dev --optimize-autoloader
 ```
@@ -79,6 +90,12 @@ npm ci && npm run build
 
 `npm run build` régénère au passage les helpers de routes typés (Wayfinder), PHP
 étant disponible ici.
+
+Ces deux commandes créent `vendor/`, `node_modules/` et `public/build/` **au nom
+de root**. C'est sans gravité, à une condition : refaire le `chown` de la
+section 6 **après** elles, sinon PHP-FPM ne pourra écrire ni dans `storage/`, ni
+dans la base. C'est la cause la plus fréquente d'une page blanche au premier
+chargement.
 
 ## 4. La configuration
 
@@ -136,6 +153,10 @@ Notez-le maintenant : il n'est stocké nulle part en clair, et devra être chang
 dès la première connexion.
 
 ## 6. Les droits
+
+À refaire **après** toute commande lancée en root dans le dossier — `composer
+install`, `npm ci`, `git pull` — et pas seulement à la première installation :
+chacune y dépose des fichiers appartenant à root.
 
 ```bash
 chown -R assoprint:www-data /var/www/assoprint
@@ -303,6 +324,10 @@ npm ci && npm run build
 ```
 
 ```bash
+chown -R assoprint:www-data /var/www/assoprint
+```
+
+```bash
 php artisan migrate --force
 ```
 
@@ -314,8 +339,9 @@ php artisan config:cache && php artisan route:cache && php artisan view:cache
 systemctl restart laravel-queue
 ```
 
-Le redémarrage du worker n'est pas facultatif : un worker déjà lancé garde en
-mémoire l'ancienne version du code.
+Le `chown` reprend les fichiers déposés par `git pull`, `composer` et `npm`, qui
+appartiennent à root ; le redémarrage du worker, lui, n'est pas facultatif : un
+worker déjà lancé garde en mémoire l'ancienne version du code.
 
 ## 13. Sauvegarde
 
