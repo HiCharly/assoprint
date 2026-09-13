@@ -122,7 +122,7 @@ SESSION_SECURE_COOKIE=true
 ```
 
 ```bash
-php artisan config:clear && php artisan config:cache
+php artisan optimize:clear && php artisan optimize
 ```
 
 `SESSION_SECURE_COOKIE=true` interdit au navigateur d'émettre le cookie de
