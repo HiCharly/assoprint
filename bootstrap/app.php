@@ -19,6 +19,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Le seul chemin vers l'application passe par cloudflared, qui parle à
+        // nginx depuis la boucle locale : c'est donc lui, et lui seul, dont les
+        // en-têtes X-Forwarded-* font foi. Sans cela Laravel se croit en HTTP et
+        // génère des URL en clair derrière le tunnel, et le throttling de
+        // connexion compte toutes les tentatives sur la même adresse — celle du
+        // proxy — au lieu de celle de chaque visiteur.
+        $middleware->trustProxies(
+            at: ['127.0.0.1', '::1'],
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO,
+        );
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [
