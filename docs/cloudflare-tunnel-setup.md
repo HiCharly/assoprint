@@ -75,6 +75,18 @@ le registrar.
 
 ## 5. Déclarer ce que le tunnel dessert
 
+Le dossier n'existe pas : `cloudflared` ne le crée qu'à l'installation du
+service, c'est-à-dire après cette étape.
+
+```bash
+mkdir -p /etc/cloudflared
+```
+
+C'est bien ce chemin qu'il faut : `cloudflared service install` y lit sa
+configuration. Un `config.yml` déposé dans `/root/.cloudflared/` ne sert, lui,
+qu'aux exécutions manuelles de `cloudflared tunnel run`, et serait ignoré par le
+service systemd.
+
 `/etc/cloudflared/config.yml` :
 
 ```yaml
@@ -88,6 +100,21 @@ ingress:
     # doit jamais servir de porte d'entrée vers autre chose, à commencer par
     # l'interface d'administration de CUPS sur le port 631.
     - service: http_status:404
+```
+
+Pour l'écrire sans recopier l'identifiant à la main :
+
+```bash
+ID=$(cloudflared tunnel list | awk '/impression-basket/ {print $1}'); cat > /etc/cloudflared/config.yml <<EOF
+tunnel: $ID
+credentials-file: /root/.cloudflared/$ID.json
+
+ingress:
+  - hostname: impression.mondomaine.fr
+    service: http://localhost:8000
+  - service: http_status:404
+EOF
+cat /etc/cloudflared/config.yml
 ```
 
 `http://localhost:8000` est le port que sert nginx dans le conteneur (voir
