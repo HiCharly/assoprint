@@ -26,7 +26,7 @@ moindre message d'erreur.
 ## 2. Les paquets
 
 ```bash
-apt update && apt install -y nginx git unzip \
+apt update && apt install -y nginx git unzip curl ca-certificates \
     php8.4-fpm php8.4-cli php8.4-sqlite3 php8.4-xml php8.4-curl \
     php8.4-mbstring php8.4-zip php8.4-intl \
     nodejs npm composer
