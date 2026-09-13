@@ -95,7 +95,7 @@ credentials-file: /root/.cloudflared/<TUNNEL_ID>.json
 
 ingress:
     - hostname: impression.mondomaine.fr
-      service: http://localhost:8000
+      service: http://127.0.0.1:8000
     # Tout ce qui n'est pas le sous-domaine ci-dessus est refusé : le tunnel ne
     # doit jamais servir de porte d'entrée vers autre chose, à commencer par
     # l'interface d'administration de CUPS sur le port 631.
@@ -111,16 +111,19 @@ credentials-file: /root/.cloudflared/$ID.json
 
 ingress:
   - hostname: impression.mondomaine.fr
-    service: http://localhost:8000
+    service: http://127.0.0.1:8000
   - service: http_status:404
 EOF
 cat /etc/cloudflared/config.yml
 ```
 
-`http://localhost:8000` est le port que sert nginx dans le conteneur (voir
-[deployment.md](deployment.md)). Le trafic entre Cloudflare et le visiteur est
-en HTTPS ; la liaison interne reste en clair, mais elle ne quitte jamais le
-conteneur.
+`127.0.0.1` et non `localhost` : nginx n'écoute que sur l'IPv4 de boucle locale
+(voir [deployment.md](deployment.md)), or `localhost` peut se résoudre d'abord
+en `::1`. Le tunnel se heurte alors à une connexion refusée et Cloudflare répond
+**502**, sans que rien ne soit en cause côté application.
+
+Le trafic entre Cloudflare et le visiteur est en HTTPS ; la liaison interne reste
+en clair, mais elle ne quitte jamais le conteneur.
 
 ## 6. Lancer le service
 

@@ -137,7 +137,12 @@ Côté rendu, React échappe tout par défaut ; le projet n'utilise
 - `cloudflared` n'établit que des connexions **sortantes** : aucun port entrant
   n'est ouvert sur la box, et l'adresse IP du club n'est pas exposée ;
 - la configuration d'ingress du tunnel se termine par `http_status:404`, de
-  sorte que le tunnel ne dessert rien d'autre que l'application.
+  sorte que le tunnel ne dessert rien d'autre que l'application ;
+- l'application ne fait confiance aux en-têtes `X-Forwarded-*` que s'ils
+  viennent de la boucle locale (`bootstrap/app.php`), c'est-à-dire de
+  `cloudflared` lui-même. Un en-tête forgé ne peut donc ni détourner les URL
+  générées vers un autre domaine, ni brouiller l'adresse retenue par la
+  limitation des tentatives de connexion.
 
 ## Journal d'audit
 
