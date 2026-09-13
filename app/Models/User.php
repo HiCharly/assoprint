@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\PrintJobStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -21,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read Collection<int, PrintJob> $printJobs
  */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
@@ -42,5 +46,29 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'must_change_password' => 'boolean',
         ];
+    }
+
+    /**
+     * The print jobs submitted by this member.
+     *
+     * @return HasMany<PrintJob, $this>
+     */
+    public function printJobs(): HasMany
+    {
+        return $this->hasMany(PrintJob::class);
+    }
+
+    /**
+     * Total number of pages this member has actually printed.
+     *
+     * Le compteur est cumulé depuis la création du compte : il n'est jamais
+     * remis à zéro, et ne compte que les tâches effectivement sorties de
+     * l'imprimante.
+     */
+    public function pagesPrinted(): int
+    {
+        return (int) $this->printJobs()
+            ->where('status', PrintJobStatus::Printed)
+            ->sum('pages_printed');
     }
 }
