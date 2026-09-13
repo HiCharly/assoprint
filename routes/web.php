@@ -1,10 +1,14 @@
 <?php
 
 use App\Http\Controllers\Auth\ForcedPasswordChangeController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PrintJobController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+// Pas de page d'accueil publique : l'application est réservée aux membres du
+// club, un visiteur est donc envoyé directement vers la connexion.
+Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'))
+    ->name('home');
 
 // Hors du groupe « password.chosen » : c'est précisément la page vers laquelle
 // ce middleware redirige tant que le mot de passe temporaire n'a pas été changé.
@@ -18,7 +22,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 });
 
 Route::middleware(['auth', 'active', 'password.chosen'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('print', [PrintJobController::class, 'create'])->name('print.create');
     Route::post('print', [PrintJobController::class, 'store'])->name('print.store');

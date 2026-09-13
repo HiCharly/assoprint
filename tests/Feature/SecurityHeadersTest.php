@@ -11,7 +11,7 @@ class SecurityHeadersTest extends TestCase
 
     public function test_responses_carry_the_security_headers()
     {
-        $response = $this->get(route('home'));
+        $response = $this->get(route('login'));
 
         $response->assertHeader('X-Frame-Options', 'DENY');
         $response->assertHeader('X-Content-Type-Options', 'nosniff');
@@ -20,7 +20,7 @@ class SecurityHeadersTest extends TestCase
 
     public function test_the_content_security_policy_forbids_inline_and_third_party_scripts()
     {
-        $policy = $this->get(route('home'))->headers->get('Content-Security-Policy');
+        $policy = $this->get(route('login'))->headers->get('Content-Security-Policy');
 
         $this->assertIsString($policy);
         $this->assertStringContainsString("default-src 'self'", $policy);
@@ -32,7 +32,7 @@ class SecurityHeadersTest extends TestCase
 
     public function test_the_inline_theme_script_carries_the_nonce_of_the_response()
     {
-        $response = $this->get(route('home'));
+        $response = $this->get(route('login'));
 
         preg_match("/'nonce-([^']+)'/", (string) $response->headers->get('Content-Security-Policy'), $matches);
 
