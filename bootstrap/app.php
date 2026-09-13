@@ -9,7 +9,6 @@ use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -35,11 +34,17 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        // AddLinkHeadersForPreloadedAssets, fourni par le starter kit, n'est pas
+        // repris : il liste tous les assets de la page dans un en-tête Link, que
+        // notre CSP alourdit d'un nonce par entrée. L'en-tête dépassait les 4 Ko
+        // réservés par défaut aux réponses FastCGI, et nginx répondait 502 sans
+        // que PHP soit en cause. Le navigateur reçoit de toute façon les mêmes
+        // préchargements dans le <head>, et l'avance apportée suppose les Early
+        // Hints, que nginx n'active pas.
         $middleware->web(append: [
             SecurityHeaders::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
-            AddLinkHeadersForPreloadedAssets::class,
         ]);
 
         $middleware->alias([
