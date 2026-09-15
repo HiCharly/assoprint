@@ -166,7 +166,7 @@ d'accepter les tâches** : `lp` réussit, renvoie un identifiant, et le document
 s'empile sans que rien ne sorte.
 
 ```bash
-ipptool -T 30 ipp://localhost/printers/HP_M254dw resources/cups/printer-ready.test
+ipptool -t -T 30 ipp://localhost/printers/HP_M254dw resources/cups/printer-ready.test
 ```
 
 Lancée depuis `/var/www/assoprint`, cette commande est exactement celle
@@ -178,12 +178,18 @@ echo $?
 ```
 
 `0` : l'imprimante est prête. Autre chose : elle ne l'est pas, et les tâches
-attendront au lieu de partir. Vérifiez-le une fois à l'installation, bac plein
-puis bac vide : la seconde exécution doit échouer.
+attendront au lieu de partir. Vérifiez-le une fois à l'installation, file active
+puis `cupsdisable HP_M254dw` : la seconde exécution doit échouer, et le rapport
+citer l'état et le motif.
+
+Le `-t` n'est pas décoratif : sans lui, un test en échec n'affiche que
+`successful-ok`, sans l'état ni les motifs. L'application ne pourrait alors plus
+distinguer une imprimante bloquée d'une question restée sans réponse, et
+laisserait partir les tâches.
 
 Le fichier `resources/cups/printer-ready.test` porte les conditions à remplir.
-Rien n'est déduit de la mise en forme de la sortie d'ipptool, qui n'est lue que
-pour nommer la cause (`media-empty`, `media-jam`…) dans le message montré au
+Rien n'est déduit de la mise en forme du rapport, qui n'est lu que pour nommer
+la cause (`media-empty`, `media-jam`, `paused`…) dans le message montré au
 membre. Une cause non reconnue donne un message générique, jamais une erreur.
 
 Si l'interrogation elle-même échoue — `ipptool` absent, URI erronée, CUPS muet —

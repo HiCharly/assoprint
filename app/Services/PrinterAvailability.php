@@ -50,11 +50,57 @@ final readonly class PrinterAvailability
         'spool-area-full' => "La file d'impression est saturée.",
     ];
 
+    /**
+     * Ce qui, dans un rapport `ipptool -t`, prouve que l'imprimante a répondu.
+     *
+     * C'est le statut de la requête IPP elle-même. Chercher la trace d'un
+     * attribut ne suffirait pas : le rapport rappelle aussi les attributs
+     * attendus, y compris quand il n'a rien reçu du tout. Une file au nom
+     * erroné répond `client-error-not-found` tout en faisant figurer
+     * « EXPECTED: printer-state » — de quoi la prendre à tort pour une
+     * imprimante en panne, et faire attendre une heure des tâches qu'une
+     * erreur de configuration condamne.
+     *
+     * L'écho de l'attente s'écrit « EXPECTED: STATUS successful-ok », qui ne
+     * peut pas être confondu avec la ligne cherchée ici.
+     *
+     * Si ipptool changeait un jour cette mise en forme, le marqueur ne serait
+     * plus trouvé et l'état deviendrait inconnu : les tâches partiraient au
+     * lieu d'attendre. C'est le bon sens de la dégradation.
+     */
+    private const EVIDENCE_OF_ANSWER = 'status-code = successful-ok';
+
     private function __construct(
         public PrinterState $state,
         public ?string $reason,
         public ?string $details,
     ) {}
+
+    /**
+     * Read the verdict of an `ipptool -t` run.
+     *
+     * Le verdict tient au seul succès du test, jamais à la lecture du rapport :
+     * les conditions sont portées par le fichier de test. Le rapport ne sert
+     * qu'à distinguer une imprimante qui s'est déclarée en panne d'une question
+     * restée sans réponse, puis à nommer la cause.
+     *
+     * @param  bool  $passed  `true` si ipptool a rendu un code de sortie nul.
+     * @param  string  $report  Sa sortie standard.
+     * @param  string  $fallbackDetails  De quoi renseigner l'administrateur
+     *                                   quand le rapport est muet.
+     */
+    public static function fromReport(bool $passed, string $report, string $fallbackDetails = ''): self
+    {
+        if ($passed) {
+            return self::available();
+        }
+
+        if (! str_contains($report, self::EVIDENCE_OF_ANSWER)) {
+            return self::unknown(trim($fallbackDetails) ?: null);
+        }
+
+        return self::unavailable($report);
+    }
 
     /**
      * The printer is ready to take a job right now.

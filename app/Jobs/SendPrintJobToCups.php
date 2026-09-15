@@ -39,10 +39,10 @@ class SendPrintJobToCups implements ShouldQueue
 
     /**
      * @param  CarbonInterface|null  $waitDeadline  Instant au-delà duquel une
-     *                                             imprimante toujours bloquée
-     *                                             fait basculer la tâche en
-     *                                             erreur. Calculé au premier
-     *                                             report, puis transporté.
+     *                                              imprimante toujours bloquée
+     *                                              fait basculer la tâche en
+     *                                              erreur. Calculé au premier
+     *                                              report, puis transporté.
      */
     public function __construct(
         public PrintJob $printJob,

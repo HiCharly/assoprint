@@ -178,6 +178,11 @@ class CupsPrintService
         try {
             $process = new Process([
                 'ipptool',
+                // Sans `-t`, un test en échec n'affiche que `successful-ok` :
+                // ni l'état, ni les motifs. Il n'y aurait alors plus moyen de
+                // distinguer une imprimante bloquée d'une question restée sans
+                // réponse, ni de nommer la cause au membre.
+                '-t',
                 '-T', (string) self::PROCESS_TIMEOUT,
                 $this->printerUri(),
                 resource_path('cups/printer-ready.test'),
@@ -185,22 +190,11 @@ class CupsPrintService
 
             $process->run();
 
-            if ($process->isSuccessful()) {
-                return PrinterAvailability::available();
-            }
-
-            $output = $process->getOutput();
-
-            // Un test en échec ne prouve rien à lui seul : ipptool sort aussi
-            // en erreur quand il n'a pas pu poser la question. La présence de
-            // `printer-state` dans la sortie atteste qu'une réponse a bien été
-            // lue, et donc que l'imprimante s'est réellement déclarée
-            // indisponible.
-            if (! str_contains($output, 'printer-state')) {
-                return PrinterAvailability::unknown($this->readableOutput($process) ?: null);
-            }
-
-            return PrinterAvailability::unavailable($output);
+            return PrinterAvailability::fromReport(
+                $process->isSuccessful(),
+                $process->getOutput(),
+                $this->readableOutput($process),
+            );
         } catch (Throwable $exception) {
             // Y compris l'absence de configuration : « je ne sais pas » est
             // toujours une réponse acceptable à cette question, alors qu'une
