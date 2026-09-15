@@ -26,7 +26,7 @@ moindre message d'erreur.
 ## 2. Les paquets
 
 ```bash
-apt update && apt install -y nginx git unzip curl ca-certificates \
+apt update && apt install -y nginx git unzip curl ca-certificates acl \
     php8.4-fpm php8.4-cli php8.4-sqlite3 php8.4-xml php8.4-curl \
     php8.4-mbstring php8.4-zip php8.4-intl \
     nodejs npm composer
@@ -92,10 +92,9 @@ npm ci && npm run build
 étant disponible ici.
 
 Ces deux commandes créent `vendor/`, `node_modules/` et `public/build/` **au nom
-de root**. C'est sans gravité, à une condition : refaire le `chown` de la
-section 6 **après** elles, sinon PHP-FPM ne pourra écrire ni dans `storage/`, ni
-dans la base. C'est la cause la plus fréquente d'une page blanche au premier
-chargement.
+de root**, donc hors de portée de www-data. C'est pour cette raison que la
+section 6 vient après et non avant : c'est elle qui donne au serveur web la
+lecture du code qu'il doit servir. Ne l'intervertissez pas avec la suite.
 
 ## 4. La configuration
 
@@ -162,31 +161,82 @@ Si le déploiement n'est pas suivi d'une connexion immédiate, changez
 
 ## 6. Les droits
 
-À refaire **après** toute commande lancée en root dans le dossier — `composer
-install`, `npm ci`, `git pull` — et pas seulement à la première installation :
-chacune y dépose des fichiers appartenant à root.
+Deux identités se partagent le dossier : `assoprint`, qui porte le code, et
+`www-data`, sous lequel tournent PHP-FPM et le worker de queue. La règle tient
+en une phrase : **www-data lit le code, il ne l'écrit jamais**, et n'obtient
+l'écriture que sur les trois chemins qui en ont besoin — `storage/`,
+`bootstrap/cache/` et `database/`. Une faille d'exécution ne peut alors pas se
+déposer à demeure dans `app/` ou dans `public/`.
+
+### Le socle
 
 ```bash
 chown -R assoprint:www-data /var/www/assoprint
 ```
 
 ```bash
-chmod -R 775 /var/www/assoprint/storage /var/www/assoprint/bootstrap/cache
+chmod -R u=rwX,g=rX,o= /var/www/assoprint
+```
+
+Le `X` majuscule ne pose le bit d'exécution que sur les dossiers, jamais sur un
+PDF ni sur un fichier `.php`. Le `o=` ferme l'arbre aux autres comptes de la
+machine : ni les documents des membres ni la base n'ont de raison d'être
+lisibles au-delà des deux identités ci-dessus.
+
+### Les droits des fichiers à venir
+
+`chmod` ne règle que les fichiers présents à l'instant où il passe. Ceux créés
+ensuite tiennent leurs droits de l'umask du processus qui les crée : un
+`artisan` lancé en root laisse derrière lui un `laravel.log` que www-data ne
+peut plus écrire, et PHP-FPM dépose des fichiers que le déployeur ne peut plus
+reprendre. La panne qui s'ensuit est silencieuse — Laravel n'a aucun moyen de
+journaliser qu'il n'arrive pas à journaliser, et la page ne montre qu'un 500 nu.
+
+Les ACL par défaut règlent la question à la source : tout ce qui naîtra dans ces
+dossiers en hérite, quel que soit son créateur et quel que soit son umask.
+
+```bash
+setfacl -R -m u:www-data:rwX -m u:assoprint:rwX /var/www/assoprint/storage /var/www/assoprint/bootstrap/cache /var/www/assoprint/database
 ```
 
 ```bash
-chmod 664 /var/www/assoprint/database/database.sqlite
+setfacl -dR -m u:www-data:rwX -m u:assoprint:rwX /var/www/assoprint/storage /var/www/assoprint/bootstrap/cache /var/www/assoprint/database
 ```
+
+La première commande vaut pour l'existant, la seconde — `-d`, pour _default_ —
+pour tout ce qui sera créé ensuite. Les deux posent les droits dans les deux
+sens, pour www-data **et** pour assoprint : une ACL à sens unique ne ferait que
+déplacer le blocage vers l'autre identité.
+
+`database/` figure dans la liste au même titre que les deux autres : SQLite
+écrit son journal **à côté** de la base, le dossier doit donc être inscriptible,
+pas seulement le fichier.
+
+### Vérifier
 
 ```bash
-chmod 775 /var/www/assoprint/database
+sudo -u www-data php artisan optimize:clear
 ```
 
-SQLite écrit un fichier journal **à côté** de la base : le dossier `database/`
-doit donc être inscriptible, pas seulement le fichier.
+Cette forme, plutôt que `php artisan` en root, reste la bonne habitude : les
+caches et les journaux naissent sous l'identité qui les relira. Les ACL font
+qu'un oubli n'est plus fatal, elles ne le rendent pas souhaitable. `sudo -u` ne
+bute pas sur le `nologin` de www-data : il exécute une commande, il n'ouvre pas
+de session.
+
+```bash
+getfacl /var/www/assoprint/storage/logs
+```
+
+Une entrée qui annonce `rwx` mais s'affiche suivie de `#effective:r-x` signale un
+masque ACL raboté par un `chmod` passé après le `setfacl`. L'ordre compte : le
+`setfacl` vient toujours en dernier, à l'installation comme à chaque mise à jour
+(section 12).
+
+### CUPS
 
 L'utilisateur qui exécute PHP doit par ailleurs appartenir au groupe `lp` pour
-parler à CUPS :
+parler à l'imprimante :
 
 ```bash
 usermod -aG lp www-data
@@ -346,6 +396,14 @@ chown -R assoprint:www-data /var/www/assoprint
 ```
 
 ```bash
+chmod -R u=rwX,g=rX,o= /var/www/assoprint
+```
+
+```bash
+setfacl -R -m u:www-data:rwX -m u:assoprint:rwX /var/www/assoprint/storage /var/www/assoprint/bootstrap/cache /var/www/assoprint/database
+```
+
+```bash
 php artisan migrate --force
 ```
 
@@ -357,9 +415,15 @@ php artisan optimize
 systemctl restart laravel-queue
 ```
 
-Le `chown` reprend les fichiers déposés par `git pull`, `composer` et `npm`, qui
-appartiennent à root ; le redémarrage du worker, lui, n'est pas facultatif : un
-worker déjà lancé garde en mémoire l'ancienne version du code.
+Le `chown` et le `chmod` reprennent les fichiers déposés par `git pull`,
+`composer` et `npm` : lancés en root, ils appartiennent à root et l'arbre étant
+fermé aux autres comptes (`o=`), www-data ne pourrait pas lire le code neuf. Le
+`setfacl` vient **après** eux, et non l'inverse : le `chmod` rabote au passage
+le masque ACL des dossiers d'écriture, et cette commande le rétablit. Les
+entrées par défaut posées à la section 6, elles, n'ont pas à être redonnées.
+
+Le redémarrage du worker n'est pas facultatif : un worker déjà lancé garde en
+mémoire l'ancienne version du code.
 
 ## 13. Sauvegarde
 
