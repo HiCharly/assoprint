@@ -3,6 +3,7 @@ import PrintJobController from '@/actions/App/Http/Controllers/PrintJobControlle
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PrintSettingsFields from '@/components/print-settings-fields';
+import PrinterNotice from '@/components/printer-notice';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { jobs } from '@/routes/print';
@@ -23,6 +24,8 @@ export default function PrintDuplicate({ job, options }: Props) {
                     title="Réimprimer un document"
                     description={`« ${job.original_filename} » sera renvoyé à l’imprimante. Ajustez les réglages si besoin.`}
                 />
+
+                <PrinterNotice notice={options.printerNotice} />
 
                 <Form
                     {...PrintJobController.duplicate.form({

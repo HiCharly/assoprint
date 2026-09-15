@@ -6,6 +6,7 @@ use App\Enums\PrintJobStatus;
 use App\Jobs\PollCupsJobStatus;
 use App\Models\PrintJob;
 use App\Services\CupsPrintService;
+use App\Services\PrinterAvailability;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Queue;
@@ -65,7 +66,9 @@ class PollCupsJobStatusTest extends TestCase
 
         $cups = $this->mock(CupsPrintService::class, function (MockInterface $mock) {
             $mock->shouldReceive('isJobInQueue')->once()->andReturn(true);
-            $mock->shouldReceive('printerState')->once()->andReturn('printer HP est arrêtée - bac vide');
+            $mock->shouldReceive('availability')->once()->andReturn(
+                PrinterAvailability::unavailable('printer-state (integer) = 5, printer-state-reasons = media-empty-error')
+            );
         });
 
         (new PollCupsJobStatus($printJob, Date::now()->subSecond()))->handle($cups);
@@ -74,9 +77,31 @@ class PollCupsJobStatusTest extends TestCase
 
         $this->assertSame(PrintJobStatus::Error, $printJob->status);
         $this->assertStringContainsString('bloquée', (string) $printJob->error_message);
-        $this->assertStringContainsString('bac vide', (string) $printJob->error_message);
+        $this->assertStringContainsString('plus de papier', (string) $printJob->error_message);
 
         Queue::assertNotPushed(PollCupsJobStatus::class);
+    }
+
+    public function test_a_stuck_job_never_shows_the_raw_printer_output_to_the_member()
+    {
+        Queue::fake();
+
+        $printJob = PrintJob::factory()->printing()->create();
+
+        $cups = $this->mock(CupsPrintService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('isJobInQueue')->once()->andReturn(true);
+            $mock->shouldReceive('availability')->once()->andReturn(
+                PrinterAvailability::unavailable('printer-state = 5, printer-state-reasons = media-jam-error')
+            );
+        });
+
+        (new PollCupsJobStatus($printJob, Date::now()->subSecond()))->handle($cups);
+
+        $message = (string) $printJob->refresh()->error_message;
+
+        $this->assertStringContainsString('bourrage papier', $message);
+        $this->assertStringNotContainsString('media-jam', $message);
+        $this->assertStringNotContainsString('printer-state', $message);
     }
 
     public function test_a_job_without_a_known_page_count_is_printed_without_counting_pages()

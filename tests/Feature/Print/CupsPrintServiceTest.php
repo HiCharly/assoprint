@@ -2,14 +2,17 @@
 
 namespace Tests\Feature\Print;
 
+use App\Enums\PrinterState;
 use App\Enums\PrintJobStatus;
 use App\Exceptions\PrintingFailedException;
 use App\Models\PrintJob;
 use App\Services\CupsPrintService;
+use App\Services\PrinterAvailability;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class CupsPrintServiceTest extends TestCase
@@ -29,6 +32,44 @@ class CupsPrintServiceTest extends TestCase
         $service = new CupsPrintService;
 
         $this->assertNull($service->pageCount(base_path('tests/Fixtures/inexistant.pdf')));
+    }
+
+    public function test_an_unconfigured_printer_state_is_unknown_rather_than_fatal()
+    {
+        config(['print.printer_name' => null, 'print.printer_uri' => null]);
+
+        // Demander l'état est une question à laquelle « je ne sais pas » est
+        // toujours une réponse : un formulaire qui s'en enquiert ne doit pas
+        // tomber parce que la configuration est incomplète.
+        $availability = (new CupsPrintService)->availability();
+
+        $this->assertSame(PrinterState::Unknown, $availability->state);
+        $this->assertFalse($availability->blocksPrinting());
+    }
+
+    public function test_a_healthy_printer_produces_no_notice_on_the_forms()
+    {
+        $cups = $this->partialMock(CupsPrintService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('availability')->andReturn(PrinterAvailability::available());
+        });
+
+        $this->assertNull($cups->depositNotice());
+    }
+
+    public function test_the_deposit_notice_is_only_computed_once_within_the_cache_window()
+    {
+        $cups = $this->partialMock(CupsPrintService::class, function (MockInterface $mock) {
+            // Sans cache, chaque affichage de formulaire interrogerait
+            // l'imprimante.
+            $mock->shouldReceive('availability')->once()->andReturn(
+                PrinterAvailability::unavailable('printer-state-reasons = media-empty-error')
+            );
+        });
+
+        $first = $cups->depositNotice();
+
+        $this->assertSame($first, $cups->depositNotice());
+        $this->assertStringContainsString('plus de papier', (string) $first);
     }
 
     public function test_it_refuses_to_print_when_no_printer_is_configured()

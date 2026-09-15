@@ -13,6 +13,8 @@ export type PrintJob = {
     status: PrintJobStatus;
     status_label: string;
     error_message: string | null;
+    /** Pourquoi la tâche n’est pas encore partie, quand l’imprimante est bloquée. */
+    blocked_reason: string | null;
     is_duplicate: boolean;
     counts_pages: boolean;
     file_exists: boolean;
@@ -31,4 +33,6 @@ export type PrintOptions = {
     colorModes: PrintChoice[];
     maxCopies: number;
     maxFileSizeMb: number;
+    /** Avertissement à afficher quand l’imprimante est bloquée, sinon null. */
+    printerNotice: string | null;
 };

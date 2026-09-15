@@ -1,0 +1,31 @@
+# Interrogation d'état utilisée avant chaque remise de tâche à CUPS.
+#
+# Le verdict est porté par le CODE DE SORTIE d'ipptool, jamais par la lecture de
+# sa sortie : les EXPECT ci-dessous font échouer le test si l'imprimante n'est
+# pas en mesure d'imprimer maintenant. Le format d'affichage d'ipptool peut donc
+# changer d'une version à l'autre sans fausser la décision.
+#
+# Les DISPLAY ne servent qu'à enrichir le message montré au membre. Les valeurs
+# affichées sont des mots-clés IPP (media-empty, media-jam…), jamais traduits :
+# contrairement à `lpstat`, cette sortie ne dépend pas de la locale du serveur.
+{
+    NAME "Imprimante prête"
+    OPERATION Get-Printer-Attributes
+
+    GROUP operation-attributes-tag
+    ATTR charset attributes-charset utf-8
+    ATTR naturalLanguage attributes-natural-language en
+    ATTR uri printer-uri $uri
+    ATTR keyword requested-attributes printer-state,printer-state-reasons,printer-is-accepting-jobs
+
+    STATUS successful-ok
+
+    # 3 = idle, 4 = processing, 5 = stopped. Une file arrêtée accepte encore les
+    # tâches : c'est précisément le cas que `lp` seul ne permet pas de détecter.
+    EXPECT printer-state WITH-VALUE 3,4
+    EXPECT printer-is-accepting-jobs WITH-VALUE true
+
+    DISPLAY printer-state
+    DISPLAY printer-state-reasons
+    DISPLAY printer-is-accepting-jobs
+}

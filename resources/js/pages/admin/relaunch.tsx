@@ -3,6 +3,7 @@ import UserController from '@/actions/App/Http/Controllers/Admin/UserController'
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PrintSettingsFields from '@/components/print-settings-fields';
+import PrinterNotice from '@/components/printer-notice';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { index, show } from '@/routes/admin/users';
@@ -24,6 +25,8 @@ export default function AdminRelaunch({ user, job, options }: Props) {
                     title="Dépanner une impression"
                     description={`« ${job.original_filename} » sera réimprimé pour ${user.name}. Ces pages ne seront pas comptées sur son total : le document n’était pas sorti la première fois.`}
                 />
+
+                <PrinterNotice notice={options.printerNotice} />
 
                 <Form
                     {...UserController.relaunch.form([user.id, job.id])}

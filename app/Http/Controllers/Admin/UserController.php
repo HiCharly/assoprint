@@ -12,6 +12,7 @@ use App\Http\Requests\Print\RelaunchPrintJobRequest;
 use App\Http\Resources\PrintJobResource;
 use App\Models\PrintJob;
 use App\Models\User;
+use App\Services\CupsPrintService;
 use App\Services\PrintJobSubmissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,10 @@ use Inertia\Response;
 
 class UserController extends Controller
 {
-    public function __construct(private readonly PrintJobSubmissionService $submissions) {}
+    public function __construct(
+        private readonly PrintJobSubmissionService $submissions,
+        private readonly CupsPrintService $cups,
+    ) {}
 
     /**
      * List every account with its cumulated page count.
@@ -247,6 +251,10 @@ class UserController extends Controller
             ),
             'maxCopies' => (int) config('print.max_copies'),
             'maxFileSizeMb' => (int) round(((int) config('print.max_file_size_kb')) / 1024),
+            // Un dépannage vise souvent un document qui n'est pas sorti : savoir
+            // que l'imprimante est encore bloquée évite à l'administrateur de
+            // relancer dans le vide.
+            'printerNotice' => $this->cups->depositNotice(),
         ];
     }
 

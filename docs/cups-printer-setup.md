@@ -158,6 +158,44 @@ lpstat -W not-completed -o HP_M254dw
 La tâche disparaît de cette liste quand elle est terminée : c'est exactement le
 signal qu'utilise le job `PollCupsJobStatus` pour marquer une tâche imprimée.
 
+### Le contrôle d'état avant envoi
+
+Avant de remettre quoi que ce soit à `lp`, l'application demande à l'imprimante
+si elle peut imprimer. C'est nécessaire parce qu'une file **arrêtée continue
+d'accepter les tâches** : `lp` réussit, renvoie un identifiant, et le document
+s'empile sans que rien ne sorte.
+
+```bash
+ipptool -T 30 ipp://localhost/printers/HP_M254dw resources/cups/printer-ready.test
+```
+
+Lancée depuis `/var/www/assoprint`, cette commande est exactement celle
+qu'exécute le serveur. Son **code de sortie** porte le verdict — et c'est lui
+seul que l'application regarde :
+
+```bash
+echo $?
+```
+
+`0` : l'imprimante est prête. Autre chose : elle ne l'est pas, et les tâches
+attendront au lieu de partir. Vérifiez-le une fois à l'installation, bac plein
+puis bac vide : la seconde exécution doit échouer.
+
+Le fichier `resources/cups/printer-ready.test` porte les conditions à remplir.
+Rien n'est déduit de la mise en forme de la sortie d'ipptool, qui n'est lue que
+pour nommer la cause (`media-empty`, `media-jam`…) dans le message montré au
+membre. Une cause non reconnue donne un message générique, jamais une erreur.
+
+Si l'interrogation elle-même échoue — `ipptool` absent, URI erronée, CUPS muet —
+l'application considère l'état comme inconnu et **laisse partir la tâche** : un
+contrôle en panne ne doit pas bloquer les impressions de tout le club. Le délai
+d'abandon de `PollCupsJobStatus` reste le filet dans ce cas.
+
+Le cas de l'imprimante éteinte mérite d'être connu : CUPS ne l'apprend qu'en
+échouant à lui parler. La **première** tâche après une extinction part donc
+malgré le contrôle, et c'est son échec qui arrête la file — les suivantes, elles,
+attendent.
+
 ## 6. Renseigner l'application
 
 ```bash

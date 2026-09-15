@@ -65,6 +65,20 @@ class PrintJobFactory extends Factory
     }
 
     /**
+     * Indicate that the job is waiting for a blocked printer.
+     *
+     * Le statut reste « en attente » : rien n'a été remis à CUPS, seule la
+     * raison de ne pas avancer s'y ajoute.
+     */
+    public function waitingForPrinter(string $reason = "L'imprimante n'a plus de papier. Votre document est en attente et partira dès qu’elle sera prête."): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => PrintJobStatus::Pending,
+            'blocked_reason' => $reason,
+        ]);
+    }
+
+    /**
      * Indicate that the job failed.
      */
     public function failed(string $message = 'Bac à papier vide.'): static

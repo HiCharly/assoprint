@@ -8,10 +8,14 @@ use App\Enums\PrintJobStatus;
 use App\Jobs\SendPrintJobToCups;
 use App\Models\PrintJob;
 use App\Models\User;
+use App\Services\CupsPrintService;
+use App\Services\PrinterAvailability;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia as Assert;
+use Mockery\MockInterface;
 use Tests\TestCase;
 
 class SubmitPrintJobTest extends TestCase
@@ -39,6 +43,39 @@ class SubmitPrintJobTest extends TestCase
             null,
             true,
         );
+    }
+
+    public function test_the_deposit_form_warns_when_the_printer_is_blocked()
+    {
+        $this->partialMock(CupsPrintService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('availability')->andReturn(
+                PrinterAvailability::unavailable('printer-state-reasons = media-empty-error')
+            );
+        });
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('print.create'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('options.printerNotice', fn (?string $notice) => $notice !== null
+                    && str_contains($notice, 'plus de papier')
+                    && str_contains($notice, 'Vous pouvez déposer')
+                )
+            );
+    }
+
+    public function test_the_deposit_form_stays_silent_when_the_printer_is_fine()
+    {
+        $this->partialMock(CupsPrintService::class, function (MockInterface $mock) {
+            $mock->shouldReceive('availability')->andReturn(PrinterAvailability::available());
+        });
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('print.create'))
+            ->assertInertia(fn (Assert $page) => $page->where('options.printerNotice', null));
     }
 
     public function test_guests_can_not_submit_a_document()

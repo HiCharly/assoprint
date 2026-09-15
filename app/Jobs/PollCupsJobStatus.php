@@ -66,14 +66,18 @@ class PollCupsJobStatus implements ShouldQueue
     }
 
     /**
-     * Explain why a job never left the queue, using the printer's own words.
+     * Explain why a job never left the queue.
+     *
+     * La cause est demandée à l'imprimante, mais traduite avant d'être montrée :
+     * son état brut est un texte libre du pilote, en anglais et truffé de détails
+     * internes, qui n'apprendrait rien à un membre.
      */
     private function stuckMessage(CupsPrintService $cups): string
     {
         $message = "La tâche est restée bloquée dans la file d'impression.";
 
-        $state = $cups->printerState();
+        $reason = $cups->availability()->reason;
 
-        return $state === null ? $message : $message.' '.$state;
+        return $reason === null ? $message : $message.' '.$reason;
     }
 }
