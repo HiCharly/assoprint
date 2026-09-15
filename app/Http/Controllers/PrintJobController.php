@@ -8,6 +8,7 @@ use App\Http\Requests\Print\DuplicatePrintJobRequest;
 use App\Http\Requests\Print\StorePrintJobRequest;
 use App\Http\Resources\PrintJobResource;
 use App\Models\PrintJob;
+use App\Services\CupsPrintService;
 use App\Services\PrintJobSubmissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PrintJobController extends Controller
 {
-    public function __construct(private readonly PrintJobSubmissionService $submissions) {}
+    public function __construct(
+        private readonly PrintJobSubmissionService $submissions,
+        private readonly CupsPrintService $cups,
+    ) {}
 
     /**
      * Show the deposit form.
@@ -147,6 +151,10 @@ class PrintJobController extends Controller
             ),
             'maxCopies' => (int) config('print.max_copies'),
             'maxFileSizeMb' => (int) round(((int) config('print.max_file_size_kb')) / 1024),
+            // Prévenir avant le dépôt vaut mieux qu'expliquer après : le membre
+            // décide en connaissance de cause, et sait que son document partira
+            // tout seul plutôt que de le redéposer.
+            'printerNotice' => $this->cups->depositNotice(),
         ];
     }
 }

@@ -17,6 +17,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Adresse IPP de la file
+    |--------------------------------------------------------------------------
+    |
+    | Utilisée par `ipptool` pour demander son état à l'imprimante avant de lui
+    | remettre une tâche. Laissée vide, elle est déduite du nom de la file sur le
+    | CUPS local — le cas normal, l'application et le serveur d'impression
+    | tournant dans le même conteneur.
+    |
+    */
+
+    'printer_uri' => env('PRINTER_URI'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Limites de dépôt
     |--------------------------------------------------------------------------
     |
@@ -49,5 +63,32 @@ return [
     'poll_interval_seconds' => (int) env('PRINT_POLL_INTERVAL_SECONDS', 5),
 
     'poll_timeout_seconds' => (int) env('PRINT_POLL_TIMEOUT_SECONDS', 1800),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Attente d'une imprimante bloquée
+    |--------------------------------------------------------------------------
+    |
+    | Une tâche déposée alors que l'imprimante est arrêtée n'est pas remise à
+    | CUPS : elle reste en attente et l'état est réinterrogé toutes les
+    | `wait_interval_seconds`. L'intervalle est plus long que celui du suivi —
+    | personne ne remet du papier en cinq secondes, et chaque passage coûte une
+    | interrogation IPP.
+    |
+    | Passé `wait_timeout_seconds`, la tâche bascule en erreur : au-delà d'une
+    | heure, le membre est parti et préférera relancer lui-même plutôt que de
+    | découvrir une impression surprise au prochain passage au club.
+    |
+    | `availability_cache_seconds` ne concerne que le bandeau affiché sur le
+    | formulaire de dépôt : sans lui, chaque affichage de page déclencherait une
+    | interrogation de l'imprimante.
+    |
+    */
+
+    'wait_interval_seconds' => (int) env('PRINT_WAIT_INTERVAL_SECONDS', 30),
+
+    'wait_timeout_seconds' => (int) env('PRINT_WAIT_TIMEOUT_SECONDS', 3600),
+
+    'availability_cache_seconds' => (int) env('PRINT_AVAILABILITY_CACHE_SECONDS', 15),
 
 ];

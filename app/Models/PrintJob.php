@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
  * @property int|null $pages_printed
  * @property PrintJobStatus $status
  * @property string|null $error_message
+ * @property string|null $blocked_reason
  * @property string|null $cups_job_id
  * @property int|null $duplicated_from_id
  * @property bool $counts_pages

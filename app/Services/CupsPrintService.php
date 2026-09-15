@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Exceptions\PrintingFailedException;
 use App\Models\PrintJob;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\Process\Process;
+use Throwable;
 
 /**
  * Unique point de contact avec CUPS.
@@ -12,6 +14,12 @@ use Symfony\Component\Process\Process;
  * Toutes les commandes sont construites sous forme de tableau d'arguments et
  * exécutées sans shell : aucune valeur ne peut donc être interprétée comme de
  * la syntaxe shell, quelle que soit son origine.
+ *
+ * Elles sont aussi toutes lancées en locale C. La sortie de `lpstat` est en
+ * effet traduite, et un serveur configuré en français répondrait « désactivée
+ * depuis » là où le code attend « disabled since » : la lecture échouerait
+ * alors silencieusement, et dans le sens le plus dangereux — celui où l'on ne
+ * reconnaît rien et où l'on en conclut que tout va bien.
  */
 class CupsPrintService
 {
@@ -19,6 +27,11 @@ class CupsPrintService
      * Durée maximale laissée à une commande CUPS pour répondre, en secondes.
      */
     private const PROCESS_TIMEOUT = 30;
+
+    /**
+     * Environnement imposé à toute commande CUPS.
+     */
+    private const PROCESS_ENV = ['LC_ALL' => 'C'];
 
     /**
      * Read the number of pages of a PDF.
@@ -29,7 +42,7 @@ class CupsPrintService
      */
     public function pageCount(string $absolutePath): ?int
     {
-        $process = new Process(['pdfinfo', $absolutePath], timeout: self::PROCESS_TIMEOUT);
+        $process = new Process(['pdfinfo', $absolutePath], env: self::PROCESS_ENV, timeout: self::PROCESS_TIMEOUT);
         $process->run();
 
         if (! $process->isSuccessful()) {
@@ -41,6 +54,37 @@ class CupsPrintService
         }
 
         return (int) $matches[1];
+    }
+
+    /**
+     * The warning to show on a form, or null when the printer is fine.
+     *
+     * Le résultat est mémorisé quelques secondes : sans cela, le moindre
+     * affichage d'un formulaire interrogerait l'imprimante, alors que l'avis
+     * rendu n'a pas besoin d'être à la seconde près.
+     *
+     * Le `null` du cas courant est enveloppé dans un tableau, faute de quoi
+     * `Cache::remember` le confondrait avec une entrée absente et referait le
+     * travail à chaque appel — soit exactement ce que le cache doit éviter.
+     */
+    public function depositNotice(): ?string
+    {
+        /** @var array{message: string|null} $cached */
+        $cached = Cache::remember(
+            'print.deposit-notice',
+            (int) config('print.availability_cache_seconds'),
+            function (): array {
+                $availability = $this->availability();
+
+                if (! $availability->blocksPrinting()) {
+                    return ['message' => null];
+                }
+
+                return ['message' => $availability->depositNotice()];
+            },
+        );
+
+        return $cached['message'];
     }
 
     /**
@@ -63,7 +107,7 @@ class CupsPrintService
             '-o', 'sides='.$printJob->duplex->cupsSides(),
             '-o', 'print-color-mode='.$printJob->color_mode->cupsPrintColorMode(),
             $printJob->absolutePath(),
-        ], timeout: self::PROCESS_TIMEOUT);
+        ], env: self::PROCESS_ENV, timeout: self::PROCESS_TIMEOUT);
 
         $process->run();
 
@@ -92,7 +136,7 @@ class CupsPrintService
     {
         $process = new Process([
             'lpstat', '-W', 'not-completed', '-o', $this->printerName(),
-        ], timeout: self::PROCESS_TIMEOUT);
+        ], env: self::PROCESS_ENV, timeout: self::PROCESS_TIMEOUT);
 
         $process->run();
 
@@ -112,16 +156,51 @@ class CupsPrintService
     }
 
     /**
-     * A human readable description of the printer state, for error messages.
+     * Ask the printer whether it can take a job right now.
+     *
+     * `lp` ne sait pas répondre à cette question : une file arrêtée continue
+     * d'accepter les tâches, qui s'y empilent sans que rien ne sorte. Seule
+     * l'interrogation IPP distingue « arrêtée » de « prête ».
+     *
+     * Le verdict vient du code de sortie d'ipptool, jamais de la lecture de sa
+     * sortie : le fichier de test porte les conditions à remplir, si bien qu'un
+     * changement de format d'affichage ne peut pas le fausser. La sortie n'est
+     * lue que pour nommer la cause, et une lecture infructueuse ne dégrade que
+     * la précision du message.
+     *
+     * En cas de doute — ipptool absent, URI erronée, CUPS muet — la réponse est
+     * `Unknown`, et l'appelant laisse partir la tâche. Une interrogation qui
+     * échoue ne doit jamais bloquer les impressions de tout le club ; le délai
+     * d'abandon de PollCupsJobStatus reste le filet pour ces cas-là.
      */
-    public function printerState(): ?string
+    public function availability(): PrinterAvailability
     {
-        $process = new Process(['lpstat', '-p', $this->printerName()], timeout: self::PROCESS_TIMEOUT);
-        $process->run();
+        try {
+            $process = new Process([
+                'ipptool',
+                // Sans `-t`, un test en échec n'affiche que `successful-ok` :
+                // ni l'état, ni les motifs. Il n'y aurait alors plus moyen de
+                // distinguer une imprimante bloquée d'une question restée sans
+                // réponse, ni de nommer la cause au membre.
+                '-t',
+                '-T', (string) self::PROCESS_TIMEOUT,
+                $this->printerUri(),
+                resource_path('cups/printer-ready.test'),
+            ], env: self::PROCESS_ENV, timeout: self::PROCESS_TIMEOUT);
 
-        $output = trim($process->getOutput());
+            $process->run();
 
-        return $output === '' ? null : $output;
+            return PrinterAvailability::fromReport(
+                $process->isSuccessful(),
+                $process->getOutput(),
+                $this->readableOutput($process),
+            );
+        } catch (Throwable $exception) {
+            // Y compris l'absence de configuration : « je ne sais pas » est
+            // toujours une réponse acceptable à cette question, alors qu'une
+            // exception ferait tomber le formulaire qui ne fait que s'enquérir.
+            return PrinterAvailability::unknown($exception->getMessage());
+        }
     }
 
     /**
@@ -140,6 +219,26 @@ class CupsPrintService
         }
 
         return $printer;
+    }
+
+    /**
+     * The IPP address of the configured queue.
+     *
+     * Déduite du nom de la file quand elle n'est pas renseignée : l'application
+     * et CUPS tournent dans le même conteneur, cas où l'adresse est toujours la
+     * même. `PRINTER_URI` ne sert qu'aux installations qui séparent les deux.
+     *
+     * @throws PrintingFailedException
+     */
+    private function printerUri(): string
+    {
+        $uri = config('print.printer_uri');
+
+        if (is_string($uri) && trim($uri) !== '') {
+            return trim($uri);
+        }
+
+        return 'ipp://localhost/printers/'.$this->printerName();
     }
 
     /**

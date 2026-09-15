@@ -93,7 +93,14 @@ export default function PrintJobsTable({
                             <PrintJobStatusBadge
                                 status={job.status}
                                 label={job.status_label}
+                                blocked={job.blocked_reason !== null}
                             />
+
+                            {job.blocked_reason !== null && (
+                                <p className="mt-1 max-w-64 text-xs whitespace-normal text-amber-700 dark:text-amber-400">
+                                    {job.blocked_reason}
+                                </p>
+                            )}
 
                             {job.error_message !== null && (
                                 <p className="text-destructive mt-1 max-w-64 text-xs whitespace-normal">

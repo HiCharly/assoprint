@@ -5,6 +5,7 @@ import FileDropzone from '@/components/file-dropzone';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PrintSettingsFields from '@/components/print-settings-fields';
+import PrinterNotice from '@/components/printer-notice';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -27,6 +28,8 @@ export default function PrintCreate({ options }: Props) {
                     title="Imprimer un document"
                     description="Déposez un PDF : il partira sur l’imprimante du club."
                 />
+
+                <PrinterNotice notice={options.printerNotice} />
 
                 <Form
                     {...PrintJobController.store.form()}

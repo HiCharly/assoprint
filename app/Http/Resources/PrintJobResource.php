@@ -31,6 +31,7 @@ class PrintJobResource extends JsonResource
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
             'error_message' => $this->error_message,
+            'blocked_reason' => $this->blocked_reason,
             'is_duplicate' => $this->duplicated_from_id !== null,
             'counts_pages' => $this->counts_pages,
             'file_exists' => $this->fileExists(),
