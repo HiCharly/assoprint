@@ -23,6 +23,13 @@ return new class extends Migration
             $table->unsignedInteger('pages_printed')->nullable();
             $table->enum('status', ['pending', 'printing', 'printed', 'error'])->default('pending');
             $table->text('error_message')->nullable();
+            // Pourquoi une tâche encore « en attente » n'a pas été remise à
+            // CUPS : l'imprimante s'est déclarée hors d'état d'imprimer. Le
+            // statut ne bouge pas pour autant — la tâche attend, ce qu'elle a
+            // toujours fait — mais l'interface montre cette raison au membre,
+            // pour qu'il ne redépose pas son document en croyant à un échec.
+            // Remise à null dès que la tâche part.
+            $table->text('blocked_reason')->nullable();
             $table->string('cups_job_id')->nullable();
             $table->foreignId('duplicated_from_id')->nullable()->constrained('print_jobs')->nullOnDelete();
             // Un dépannage — l'administrateur renvoie un document qui n'est pas
