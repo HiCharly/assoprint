@@ -203,7 +203,7 @@ setfacl -R -m u:www-data:rwX -m u:assoprint:rwX /var/www/assoprint/storage /var/
 setfacl -dR -m u:www-data:rwX -m u:assoprint:rwX /var/www/assoprint/storage /var/www/assoprint/bootstrap/cache /var/www/assoprint/database
 ```
 
-La première commande vaut pour l'existant, la seconde — `-d`, pour *default* —
+La première commande vaut pour l'existant, la seconde — `-d`, pour _default_ —
 pour tout ce qui sera créé ensuite. Les deux posent les droits dans les deux
 sens, pour www-data **et** pour assoprint : une ACL à sens unique ne ferait que
 déplacer le blocage vers l'autre identité.
